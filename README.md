@@ -17,6 +17,32 @@ Authentication, subject resolution, ownership verification, field-level permissi
 
 ---
 
+## Why use this?
+
+In conventional Laravel, adding a new API resource means creating a **controller**, **form request**, **policy**, **resource**, and wiring routes — five or more files that must agree on the same truth. Spawnflow replaces that with a single config entry and an optional context enum.
+
+| Trait | What it means |
+|-------|---------------|
+| **Runtime fluent chain** | The entire request lifecycle is one method chain, not spread across files |
+| **Dynamic subject resolution** | Models resolve from a URL segment via a registry — no per-resource controllers |
+| **Inline authorization** | Ownership and field permissions live in the chain, not in separate policy files |
+| **Minimal file surface** | New resource = 1 config entry + 1 enum. No scaffold. |
+| **Reads like a sentence** | `spawn → auth → resolve → ask → fields → validate → save → present` |
+
+### Built for LLM-assisted codebases
+
+Spawnflow is intentionally optimized for codebases where AI writes the majority of code.
+
+| Property | Why it matters |
+|----------|---------------|
+| One pattern to repeat | An LLM doesn't need to coordinate 5 file types per resource |
+| ~500 lines total surface | The entire `Flow` class + a context enum fits in a single context window |
+| Exhaustive `match` expressions | PHP enums enforce every permission branch is handled — no forgotten cases |
+| Minimal diff surface | Adding a resource is mechanical to generate, easy to review |
+| Explicit chain, no magic | No middleware, observers, or policies to hallucinate — the chain says exactly what happens |
+
+---
+
 ## Installation
 
 ```bash
@@ -346,6 +372,31 @@ $flow->getRequest();   // Original HTTP request
 ->after(fn ($f) => CampaignCreated::dispatch($f->getInstance()))
 ->present();
 ```
+
+---
+
+## The Last Mile
+
+Spawnflow handles **~80-85%** of typical API operations. The remaining 15-20% — the "last mile" — is where generic CRUD ends and custom logic begins.
+
+### What Spawnflow absorbs
+
+Operations that *seem* custom but decompose into CRUD with smart validation:
+
+- **State transitions** (schedule, publish, archive) — a PATCH that sets `status`. The context enum enforces which transitions are valid.
+- **Deep clones** (duplicate a campaign) — the frontend orchestrates a sequence of generic POST calls. No custom endpoint needed.
+- **Multi-step creation** (create resource + related records) — the frontend coordinates multiple Spawnflow calls in sequence.
+
+### What stays as custom endpoints
+
+| Category | Why | Chain still helps? |
+|----------|-----|--------------------|
+| **Aggregation / analytics** | GROUP BY, date bucketing, cross-table joins | Yes — `spawn → auth → resolve → ask` for identity + ownership, then break out |
+| **External service calls** | Spotify lookups, payment processing, S3 signed URLs | Yes — `spawn → auth` for identity context |
+| **Webhook receivers** | No authenticated user, no subject | No — these are fire-and-forget event handlers |
+| **File / binary operations** | Uploads, zip streams, CSV exports | No — response isn't a model |
+
+Even for custom endpoints, the chain's escape hatches (`getUser()`, `getInstance()`, etc.) let you reuse auth and ownership without reimplementing them.
 
 ---
 
