@@ -1,0 +1,53 @@
+{
+    "name": "spawnflow/spawnflow-laravel",
+    "description": "Fluent, chain-based API request lifecycle for Laravel. Spawn context, resolve subjects, gate ownership, validate, persist — in one expression.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["laravel", "api", "crud", "fluent", "chain", "permissions", "authorization", "field-level-permissions"],
+    "homepage": "https://github.com/keybrdist/spawnflow-laravel",
+    "support": {
+        "issues": "https://github.com/keybrdist/spawnflow-laravel/issues",
+        "source": "https://github.com/keybrdist/spawnflow-laravel"
+    },
+    "authors": [
+        {
+            "name": "Mike Ramirez",
+            "role": "Creator"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/database": "^11.0|^12.0",
+        "illuminate/http": "^11.0|^12.0",
+        "illuminate/support": "^11.0|^12.0",
+        "illuminate/validation": "^11.0|^12.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "pestphp/pest": "^2.0|^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Spawnflow\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Spawnflow\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Spawnflow\\SpawnflowServiceProvider"
+            ]
+        }
+    },
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}

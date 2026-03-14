@@ -1,0 +1,60 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User;
+use Spawnflow\Contracts\FieldContext;
+
+enum {{ class }}: string implements FieldContext
+{
+    case Owner = 'owner';
+    case Viewer = 'viewer';
+
+    public static function resolve(User $user, Model $record): static
+    {
+        $ownershipColumn = config('spawnflow.ownership_column', 'ownerId');
+
+        return match (true) {
+            $user->id === $record->{$ownershipColumn} => self::Owner,
+            default => self::Viewer,
+        };
+    }
+
+    public function editableFields(): array
+    {
+        return match ($this) {
+            self::Owner => [
+                // 'title',
+                // 'description',
+            ],
+            self::Viewer => [],
+        };
+    }
+
+    public function validation(): array
+    {
+        return match ($this) {
+            self::Owner => [
+                // 'title' => 'required|string|max:255',
+            ],
+            self::Viewer => [],
+        };
+    }
+
+    public function visibleFields(): array
+    {
+        return match ($this) {
+            self::Owner => [
+                'id',
+                // 'title',
+                // 'description',
+                // 'createdAt',
+            ],
+            self::Viewer => [
+                'id',
+                // 'title',
+            ],
+        };
+    }
+}
