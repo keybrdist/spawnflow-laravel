@@ -1,0 +1,19 @@
+<?php
+
+namespace App\Spawnflow;
+
+use Spawnflow\Schema\Field;
+use Spawnflow\Schema\FieldSet;
+
+class {{ class }} extends FieldSet
+{
+    public static function fields(): array
+    {
+        return [
+            // Field::string('title')->rules('required|string|max:255'),
+            // Field::text('body')->nullable(),
+            // Field::enum('status', \App\Enums\Status::class),
+            // Field::belongsTo('group_id', \App\Models\Group::class)->display('name')->searchable(),
+        ];
+    }
+}

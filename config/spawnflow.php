@@ -30,6 +30,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Field Descriptors
+    |--------------------------------------------------------------------------
+    |
+    | Maps each subject to its FieldSet class — the type-aware field
+    | descriptors (type, widget, label, rules, enum options, relations)
+    | that the schema endpoint and generator serialize from. Subjects
+    | without a FieldSet fall back to minimal inferred descriptors.
+    |
+    */
+    'fields' => [
+        // 'campaigns' => \App\Spawnflow\CampaignFields::class,
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Ownership
     |--------------------------------------------------------------------------
     |

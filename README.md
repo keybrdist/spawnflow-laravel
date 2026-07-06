@@ -272,9 +272,48 @@ Adding a new resource requires **zero new controllers and zero new routes** — 
 
 ---
 
+## Field Descriptors
+
+Field descriptors make fields **type-aware**. A `FieldSet` class per subject declares what each field *is* — type, widget, label, base validation rules, enum options, relation semantics — so the schema endpoint and the generator can serve frontends everything needed for form rendering and client-side validation, from one declaration.
+
+```php
+use Spawnflow\Schema\Field;
+use Spawnflow\Schema\FieldSet;
+
+class PostFields extends FieldSet
+{
+    public static function fields(): array
+    {
+        return [
+            Field::string('title')->rules('required|string|max:255'),
+            Field::text('body')->nullable(),
+            Field::enum('status', PostStatus::class),          // options + in: rule + select widget, derived
+            Field::belongsTo('group_id', Group::class)         // FK: searchable select, exists rule
+                ->display('name')->searchable(),
+            Field::email('email')->rules('required|unique:users,email'),
+            Field::bool('is_active')->wire('on_off'),          // declared wire coercion, both sides
+            Field::password('password'),                       // write-only by default
+        ];
+    }
+}
+```
+
+Register it:
+
+```php
+// config/spawnflow.php
+'fields' => [
+    'posts' => \App\Spawnflow\PostFields::class,
+],
+```
+
+Contexts keep referencing fields by name; the schema layer joins names to descriptors. Subjects without a `FieldSet` fall back to minimal inferred descriptors.
+
+---
+
 ## Schema Endpoint
 
-Enable the built-in schema routes to serve field permission schemas to your frontend:
+Enable the built-in schema routes to serve field schemas to your frontend:
 
 ```php
 // config/spawnflow.php
@@ -284,39 +323,36 @@ Enable the built-in schema routes to serve field permission schemas to your fron
 
 This registers:
 
-- `GET /spawnflow/schema/{subject}` — returns all context variants for the subject
-- `GET /spawnflow/schema/{subject}/{id}` — returns the resolved variant for a specific record
+- `GET /spawnflow/schema/{subject}` — descriptors + all context variants for the subject
+- `GET /spawnflow/schema/{subject}/{id}` — the resolved variant for a specific record
 
-**All variants response:**
-
-```json
-{
-  "resource": "posts",
-  "variants": [
-    {
-      "context": "owner:draft",
-      "editable_fields": ["title", "body", "status"],
-      "validation": { "title": "required|string|max:255", "body": "nullable|string", "status": "in:draft,published" },
-      "visible_fields": ["id", "title", "body", "status", "owner_id", "created_at", "updated_at"]
-    }
-  ]
-}
-```
+Responses follow the versioned **schema contract v1** (`docs/schema-contract.md`). Validation rules are serialized structurally — mechanically compilable to Zod — with rules a client can't evaluate (database checks, closures) flagged `serverOnly`.
 
 **Resolved variant response:**
 
 ```json
 {
+  "spawnflow": "1",
   "resource": "posts",
   "context": "owner:draft",
   "fields": {
-    "title": { "editable": true, "rules": "required|string|max:255" },
-    "body": { "editable": true, "rules": "nullable|string" },
-    "status": { "editable": true, "rules": "in:draft,published" },
-    "owner_id": { "editable": false, "rules": null }
+    "title": {
+      "type": "string", "widget": "input", "label": "Title",
+      "editable": true, "visible": true,
+      "rules": [{"rule": "required"}, {"rule": "string"}, {"rule": "max", "params": [255]}]
+    },
+    "status": {
+      "type": "enum", "widget": "select", "label": "Status",
+      "options": [{"value": "draft", "label": "Draft"}, {"value": "published", "label": "Published"}],
+      "editable": true, "visible": true,
+      "rules": [{"rule": "in", "params": ["draft", "published"]}]
+    },
+    "owner_id": { "type": "int", "widget": "number", "label": "Owner", "editable": false, "visible": true }
   }
 }
 ```
+
+**All variants response** carries descriptors once plus per-variant `editable_fields`, `visible_fields`, and effective structured `rules` — a discriminated union keyed by `context`. See `docs/schema-contract.md` for the full specification.
 
 ---
 
@@ -414,6 +450,11 @@ return [
     // Subjects without a context allow all $fillable fields for the owner.
     'contexts' => [
         // 'posts' => \App\Spawnflow\PostContext::class,
+    ],
+
+    // Maps subjects to FieldSet classes (type-aware field descriptors).
+    'fields' => [
+        // 'posts' => \App\Spawnflow\PostFields::class,
     ],
 
     // Database column linking records to their owner.

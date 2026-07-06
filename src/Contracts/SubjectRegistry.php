@@ -23,6 +23,23 @@ interface SubjectRegistry
     public function contextFor(string $alias): ?string;
 
     /**
+     * Resolve a subject alias to its FieldSet class, if one is registered.
+     *
+     * Returns null if the subject has no field descriptors (schema output
+     * falls back to minimal inferred descriptors).
+     *
+     * @return class-string<\Spawnflow\Schema\FieldSet>|null
+     */
+    public function fieldsFor(string $alias): ?string;
+
+    /**
+     * Reverse lookup: the registered alias for a model class, if any.
+     *
+     * @param  class-string<Model>|null  $modelClass
+     */
+    public function aliasFor(?string $modelClass): ?string;
+
+    /**
      * Get all registered subject aliases.
      *
      * @return array<string, class-string<Model>>

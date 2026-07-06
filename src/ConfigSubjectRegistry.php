@@ -14,10 +14,14 @@ class ConfigSubjectRegistry implements SubjectRegistry
     /** @var array<string, class-string|null> */
     protected array $contexts;
 
+    /** @var array<string, class-string|null> */
+    protected array $fields;
+
     public function __construct()
     {
         $this->subjects = config('spawnflow.subjects', []);
         $this->contexts = config('spawnflow.contexts', []);
+        $this->fields = config('spawnflow.fields', []);
     }
 
     public function resolve(string $alias): Model
@@ -34,6 +38,24 @@ class ConfigSubjectRegistry implements SubjectRegistry
         $alias = mb_strtolower($alias);
 
         return $this->contexts[$alias] ?? null;
+    }
+
+    public function fieldsFor(string $alias): ?string
+    {
+        $alias = mb_strtolower($alias);
+
+        return $this->fields[$alias] ?? null;
+    }
+
+    public function aliasFor(?string $modelClass): ?string
+    {
+        if ($modelClass === null) {
+            return null;
+        }
+
+        $alias = array_search($modelClass, $this->subjects, true);
+
+        return $alias === false ? null : $alias;
     }
 
     public function all(): array

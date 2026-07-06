@@ -31,6 +31,13 @@ abstract class TestCase extends BaseTestCase
             'posts' => \Spawnflow\Tests\Fixtures\PostContext::class,
         ]);
 
+        $app['config']->set('spawnflow.fields', [
+            'posts' => \Spawnflow\Tests\Fixtures\PostFields::class,
+        ]);
+
+        $app['config']->set('spawnflow.schema_routes', true);
+        $app['config']->set('spawnflow.schema_middleware', []);
+
         $app['config']->set('spawnflow.ownership_column', 'owner_id');
         $app['config']->set('spawnflow.user_key', 'id');
     }
