@@ -350,4 +350,33 @@ final class Field
     {
         return array_column($this->getOptions(), 'value');
     }
+
+    /**
+     * Raw Laravel rules implied by the descriptor itself: the type's
+     * implied rules, enum membership, relation existence, nullability.
+     *
+     * The single definition both the schema serializer and the server-side
+     * rule resolver derive implied validation from.
+     *
+     * @return list<string>
+     */
+    public function impliedRawRules(): array
+    {
+        $rules = $this->type->impliedRules();
+
+        if ($this->type === FieldType::Enum) {
+            $rules[] = 'in:'.implode(',', $this->getOptionValues());
+        }
+
+        if ($this->type === FieldType::Relation && $this->relatedModel !== null) {
+            $related = new $this->relatedModel;
+            $rules[] = 'exists:'.$related->getTable().','.$related->getKeyName();
+        }
+
+        if ($this->nullable) {
+            $rules[] = 'nullable';
+        }
+
+        return $rules;
+    }
 }

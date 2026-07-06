@@ -5,8 +5,9 @@ namespace Spawnflow\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Spawnflow\ContextResolver;
 use Spawnflow\Contracts\SubjectRegistry;
-use Spawnflow\Flow;
+use Spawnflow\Exceptions\UnauthenticatedException;
 use Spawnflow\Schema\SchemaSerializer;
 
 /**
@@ -36,14 +37,23 @@ class SchemaController extends Controller
         }
 
         // With a record ID, resolve the caller's specific context variant.
+        // Resolution is read-only: any authenticated user gets their variant
+        // (owners resolve owner cases, everyone else e.g. a viewer case) —
+        // the context enum is the authorization decision.
         if ($id !== null) {
-            $flow = (new Flow)
-                ->spawn($request)->auth()
-                ->resolve($alias)
-                ->ask('GET', $id)
-                ->fields($contextClass);
+            $user = $request->user();
+            if ($user === null) {
+                throw new UnauthenticatedException;
+            }
 
-            return response()->json($serializer->resolved($alias, $flow->getContext()));
+            $record = $registry->resolve($alias)->newQuery()->find($id);
+            if ($record === null) {
+                return response()->json(['error' => "Record not found: {$alias}/{$id}"], 404);
+            }
+
+            $context = app(ContextResolver::class)->resolve($alias, $user, $record, contextClass: $contextClass);
+
+            return response()->json($serializer->resolved($alias, $context));
         }
 
         return response()->json($serializer->variants($alias, $contextClass));

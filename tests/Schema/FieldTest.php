@@ -121,7 +121,7 @@ test('effectiveRules adds type-implied, enum, relation, and nullable rules', fun
     expect($enumRules)->toContainEqual(['rule' => 'in', 'params' => ['draft', 'published']]);
 
     $relationRules = $serializer->effectiveRules(Field::belongsTo('post_id', Post::class), null);
-    expect($relationRules)->toContainEqual(['rule' => 'exists', 'serverOnly' => true]);
+    expect($relationRules)->toContainEqual(['rule' => 'exists', 'params' => ['posts', 'id'], 'serverOnly' => true]);
 
     $emailRules = $serializer->effectiveRules(Field::email('email')->rules('required'), null);
     expect($emailRules)->toContainEqual(['rule' => 'email']);

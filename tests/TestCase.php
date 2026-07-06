@@ -25,6 +25,8 @@ abstract class TestCase extends BaseTestCase
 
         $app['config']->set('spawnflow.subjects', [
             'posts' => \Spawnflow\Tests\Fixtures\Post::class,
+            // Same model under a context-less alias, for fieldset-only paths.
+            'articles' => \Spawnflow\Tests\Fixtures\Post::class,
         ]);
 
         $app['config']->set('spawnflow.contexts', [
@@ -33,6 +35,7 @@ abstract class TestCase extends BaseTestCase
 
         $app['config']->set('spawnflow.fields', [
             'posts' => \Spawnflow\Tests\Fixtures\PostFields::class,
+            'articles' => \Spawnflow\Tests\Fixtures\ArticleFields::class,
         ]);
 
         $app['config']->set('spawnflow.schema_routes', true);

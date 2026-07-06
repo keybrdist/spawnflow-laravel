@@ -159,12 +159,12 @@ visible fields. `rules` appears only on editable fields.
 }
 ```
 
-**Known limitation (v1):** resolution runs through the standard chain
-(`auth → resolve → ask → fields`), so it requires **ownership** of the
-record and throws for contexts with zero editable fields. Non-owner
-("viewer") variants are therefore unreachable via the resolved endpoint
-today — use the all-variants schema client-side instead. Widening resolution
-for read-only contexts is planned for the validation-authority phase.
+Resolution is **read-only and ownership-free**: any authenticated user gets
+their variant for the record — owners resolve owner cases, everyone else
+resolves whatever the context enum decides (e.g. a viewer case). The context
+enum is the authorization decision. Missing record → 404; unauthenticated →
+401. The resolved schema exposes only the union of the variant's editable
+and visible fields.
 
 ---
 
@@ -211,6 +211,34 @@ declared field editable and visible with its base rules:
 ```json
 { "spawnflow": "1", "resource": "posts", "context": "default", "fields": { "...": "..." } }
 ```
+
+---
+
+## Server-side enforcement (validation authority)
+
+What the contract tells the frontend is exactly what the server enforces.
+`Spawnflow\Validation\RuleResolver` resolves the same effective raw rules
+(same precedence, same implied rules — both sides derive implied rules from
+`Field::impliedRawRules()`) for three consumers:
+
+1. **`Flow::validate()`** — with no explicit rules argument, sources rules
+   from the subject's FieldSet + active context. Precedence: explicit
+   argument → context `validation()` per field → field base rules → implied
+   rules.
+2. **`SpawnflowFormRequest`** — FormRequest bridge for conventional
+   controllers: subclass, set `protected string $subject`, and `rules()`
+   returns the resolver's output for the caller's resolved context (record
+   loaded from the route's `{id}` when present, synthetic record on create).
+3. **Precognition** — a request carrying a `Precognition` header makes
+   `Flow::validate()` run validation only and halt the chain with
+   `204 + Precognition: true` headers (or the standard 422 on failure).
+   `Precognition-Validate-Only: a,b` scopes validation to the named fields.
+   Pair with Laravel's `HandlePrecognitiveRequests` middleware for
+   Precognition headers on error responses.
+
+Implied relation `exists` rules are fully qualified server-side
+(`exists:{table},{key}` derived from the related model), so FK integrity is
+enforced without hand-written rules.
 
 ---
 

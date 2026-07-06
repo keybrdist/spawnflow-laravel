@@ -19,8 +19,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SubjectRegistry::fieldsFor()` and `aliasFor()` (reverse model → alias lookup)
 - Test coverage for schema routes, field descriptors, and rule serialization
 
+- **Validation authority** — one rule source, three consumers:
+  - `Validation\RuleResolver` — effective raw rules from FieldSet descriptors + context overrides + descriptor-implied rules (type, enum `in:`, relation `exists:{table},{key}`, nullability); mirrors the schema contract exactly
+  - `Flow::validate()` now sources rules automatically: explicit argument → context `validation()` → field base rules → implied rules
+  - `Http\SpawnflowFormRequest` — FormRequest bridge for conventional controllers (`protected string $subject`)
+  - Precognition support: `Precognition` header runs validate-only and halts the chain with 204 + Precognition headers; `Precognition-Validate-Only` scopes fields
+- `ContextResolver` — single definition of context resolution (synthetic record on create), shared by `Flow::fields()`, the schema endpoint, and the FormRequest bridge
+- `Field::impliedRawRules()` — single definition of descriptor-implied rules, consumed by both the schema serializer and the server-side rule resolver
+
 ### Changed
 - `SchemaController` responses now follow schema contract v1 (`spawnflow: "1"`, joined descriptors, structured rules per variant); previous ad-hoc response shapes replaced
+- Resolved schema endpoint (`/schema/{subject}/{id}`) no longer requires ownership: resolution is read-only, any authenticated user gets their variant (viewer cases now reachable); missing record → 404
+- Resolved schema exposes only the union of the variant's editable and visible fields
+- Implied relation `exists` rules are fully qualified (`exists:{table},{key}`) in both schema output and server enforcement
 
 ## [0.1.0] - 2026-03-14
 

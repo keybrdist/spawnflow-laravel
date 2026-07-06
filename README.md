@@ -311,6 +311,40 @@ Contexts keep referencing fields by name; the schema layer joins names to descri
 
 ---
 
+## Centralized Validation
+
+Rules live once — on the field descriptors, with per-context overrides — and every consumer enforces the same thing:
+
+**1. The chain.** `validate()` with no arguments sources rules automatically: explicit argument → context `validation()` per field → field base rules → descriptor-implied rules (type checks, enum `in:`, relation `exists:{table},{key}`, nullability).
+
+```php
+(new Flow)
+    ->spawn($request)->auth()
+    ->resolve('posts')
+    ->ask('POST', $id)
+    ->fields()
+    ->validate()          // rules resolved from PostFields + resolved context
+    ->save($request->all())
+    ->present();
+```
+
+**2. FormRequests.** For conventional controllers, bridge into the same rules without adopting the chain:
+
+```php
+use Spawnflow\Http\SpawnflowFormRequest;
+
+class UpdatePostRequest extends SpawnflowFormRequest
+{
+    protected string $subject = 'posts';
+}
+```
+
+`rules()` resolves the caller's context (record loaded from the route's `{id}`, synthetic record on create) and returns the same effective rules the chain enforces and the schema endpoint serves.
+
+**3. Live validation (Precognition).** A request with a `Precognition` header makes `validate()` run validation only and halt the chain with `204 + Precognition: true` (or the standard 422 on failure). `Precognition-Validate-Only: title,email` scopes the pass to specific fields — Laravel Precognition frontend helpers work against Spawnflow routes without duplicated rules.
+
+---
+
 ## Schema Endpoint
 
 Enable the built-in schema routes to serve field schemas to your frontend:

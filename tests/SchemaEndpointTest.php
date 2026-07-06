@@ -82,7 +82,7 @@ test('resolved schema returns the caller-specific variant with field flags', fun
         ->and($response->json('fields.owner_id'))->not->toHaveKey('rules');
 });
 
-test('resolved schema requires ownership of the record', function (): void {
+test('resolved schema resolves the viewer variant for non-owners', function (): void {
     $owner = schemaUser();
     $post = Post::create([
         'owner_id' => $owner->id,
@@ -92,7 +92,19 @@ test('resolved schema requires ownership of the record', function (): void {
 
     $this->actingAs(schemaUser());
 
-    $this->getJson("/spawnflow/schema/posts/{$post->id}")->assertStatus(403);
+    $response = $this->getJson("/spawnflow/schema/posts/{$post->id}");
+
+    $response->assertOk()
+        ->assertJsonPath('context', 'viewer')
+        ->assertJsonPath('fields.title.editable', false)
+        ->assertJsonPath('fields.title.visible', true)
+        ->assertJsonMissingPath('fields.body');
+});
+
+test('resolved schema returns 404 for a missing record', function (): void {
+    $this->actingAs(schemaUser());
+
+    $this->getJson('/spawnflow/schema/posts/999999')->assertNotFound();
 });
 
 test('resolved schema requires authentication', function (): void {

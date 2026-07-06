@@ -5,6 +5,7 @@ namespace Spawnflow;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -13,6 +14,7 @@ use Spawnflow\Contracts\SubjectRegistry;
 use Spawnflow\Exceptions\ForbiddenFieldAccessException;
 use Spawnflow\Exceptions\OwnershipException;
 use Spawnflow\Exceptions\UnauthenticatedException;
+use Spawnflow\Validation\RuleResolver;
 
 class Flow
 {
@@ -143,26 +145,19 @@ class Flow
      */
     public function fields(?string $contextClass = null): static
     {
-        $contextClass ??= $this->registry->contextFor($this->subjectAlias);
+        $context = (new ContextResolver($this->registry))->resolve(
+            $this->subjectAlias,
+            $this->user,
+            $this->instance,
+            $this->request->all(),
+            $contextClass,
+        );
 
-        if ($contextClass === null) {
+        if ($context === null) {
             return $this;
         }
 
-        $record = $this->instance;
-
-        // On create, no instance exists yet — build a synthetic record
-        // with ownership and request data so the context enum can resolve
-        // against the intended state (e.g. status = 'draft').
-        if ($record === null) {
-            $ownershipColumn = config('spawnflow.ownership_column', 'ownerId');
-            $userKey = config('spawnflow.user_key', 'id');
-            $record = $this->subject->newInstance();
-            $record->forceFill($this->request->all());
-            $record->{$ownershipColumn} = $this->user->{$userKey};
-        }
-
-        $this->context = $contextClass::resolve($this->user, $record);
+        $this->context = $context;
 
         if ($this->context->editableFields() === []) {
             throw new ForbiddenFieldAccessException;
@@ -178,20 +173,62 @@ class Flow
     /**
      * Validate request data against rules.
      *
-     * If a FieldContext is active, uses its context-aware rules.
-     * Otherwise, accepts explicit rules.
+     * Rule source precedence: explicit rules argument, then the subject's
+     * FieldSet descriptors with the active context's validation() entries
+     * overriding per field (see Validation\RuleResolver), then the
+     * context's validation() alone.
      *
-     * @param  array<string, string|array>|null  $rules  Explicit rules (overrides context).
+     * Precognition: when the request carries a `Precognition` header, the
+     * chain stops here — validation runs (optionally scoped to the fields
+     * named in `Precognition-Validate-Only`) and a 204 with Precognition
+     * headers is returned instead of executing the rest of the chain.
+     *
+     * @param  array<string, string|array>|null  $rules  Explicit rules (overrides all sources).
      */
     public function validate(?array $rules = null): static
     {
-        $rules ??= $this->context?->validation() ?? [];
+        $rules ??= $this->subjectAlias !== null
+            ? (new RuleResolver($this->registry))->for($this->subjectAlias, $this->context)
+            : ($this->context?->validation() ?? []);
+
+        if ($this->request->headers->has('Precognition')) {
+            $this->validatePrecognitive($rules);
+        }
 
         if ($rules !== []) {
             Validator::make($this->request->all(), $rules)->validate();
         }
 
         return $this;
+    }
+
+    /**
+     * Run a Precognition validate-only pass and halt the chain with a 204.
+     *
+     * Validation failures throw the standard ValidationException (422).
+     * Pair with Laravel's HandlePrecognitiveRequests middleware to get
+     * Precognition headers on error responses too.
+     *
+     * @param  array<string, string|array>  $rules
+     */
+    protected function validatePrecognitive(array $rules): never
+    {
+        $only = $this->request->headers->get('Precognition-Validate-Only');
+
+        if ($only !== null && $only !== '') {
+            $rules = array_intersect_key($rules, array_flip(explode(',', $only)));
+        }
+
+        if ($rules !== []) {
+            Validator::make($this->request->all(), $rules)->validate();
+        }
+
+        throw new HttpResponseException(
+            response()->noContent()->withHeaders([
+                'Precognition' => 'true',
+                'Precognition-Success' => 'true',
+            ]),
+        );
     }
 
     // ---------------------------------------------------------------

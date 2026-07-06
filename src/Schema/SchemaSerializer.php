@@ -33,8 +33,15 @@ class SchemaSerializer
         $visible = array_flip($context->visibleFields());
         $overrides = $context->validation();
 
+        // The resolved schema exposes only what this variant grants:
+        // the union of its editable and visible fields.
+        $names = array_values(array_unique(array_merge(
+            $context->editableFields(),
+            $context->visibleFields(),
+        )));
+
         $fields = [];
-        foreach ($this->fieldNames($alias, [$context]) as $name) {
+        foreach ($names as $name) {
             $field = $this->fieldFor($alias, $name);
             $isEditable = isset($editable[$name]);
 
@@ -186,26 +193,38 @@ class SchemaSerializer
         $present = array_flip(array_column($rules, 'rule'));
 
         $implied = [];
-
-        foreach ($field->type->impliedRules() as $name) {
-            if (! isset($present[$name])) {
-                $implied[] = ['rule' => $name];
+        foreach (RuleSerializer::serialize($field->impliedRawRules()) as $entry) {
+            if (static::impliedApplies($entry['rule'], $present)) {
+                $implied[] = $entry;
             }
         }
 
-        if ($field->type === FieldType::Enum && ! isset($present['in']) && ! isset($present['enum'])) {
-            $implied[] = ['rule' => 'in', 'params' => $field->getOptionValues()];
-        }
-
-        if ($field->type === FieldType::Relation && ! isset($present['exists'])) {
-            $implied[] = ['rule' => 'exists', 'serverOnly' => true];
-        }
-
-        if ($field->isNullable() && ! isset($present['nullable']) && ! isset($present['required'])) {
-            $implied[] = ['rule' => 'nullable'];
-        }
-
         return array_merge($rules, $implied);
+    }
+
+    /**
+     * Whether an implied rule should be appended given the rules already
+     * present by name.
+     *
+     * @param  array<string, int>  $present
+     */
+    protected static function impliedApplies(string $name, array $present): bool
+    {
+        if (isset($present[$name])) {
+            return false;
+        }
+
+        // An explicit enum rule already covers membership.
+        if ($name === 'in' && isset($present['enum'])) {
+            return false;
+        }
+
+        // A required field must not gain implied nullability.
+        if ($name === 'nullable' && isset($present['required'])) {
+            return false;
+        }
+
+        return true;
     }
 
     // ---------------------------------------------------------------
