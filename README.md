@@ -428,6 +428,39 @@ The generator and the live endpoint emit through one serializer — generated ar
 
 ---
 
+## Relation Options
+
+Relation fields get a data source for free. When schema routes are enabled, `GET /spawnflow/options/{subject}/{field}?q=&page=` serves `{value, label}` pages from the related model's display column — ownership-scoped by default, `unscoped()` for shared lookups (countries, plans), `q` search for `searchable()` fields. Relation descriptors carry the `options_url` so renderers wire comboboxes automatically.
+
+---
+
+## React Renderer (`js/react-shadcn`)
+
+`@spawnflow/react-shadcn` renders complete forms from the schema contract — shadcn-styled widgets, react-hook-form + Zod under the hood:
+
+```tsx
+import { SpawnForm, createHttpClient } from '@spawnflow/react-shadcn';
+
+const client = createHttpClient({ baseUrl: '/api', headers: () => ({ Authorization: `Bearer ${token}` }) });
+
+<SpawnForm client={client} subject="posts" id={42} onSubmit={...} />
+```
+
+- Widgets picked from descriptors (enum → select, relation → async searchable combobox fed by the options endpoint, `confirmed` rules pair a confirmation input automatically)
+- Client-side validation compiled at runtime from the structured rules; `serverOnly` rules render a "server-checked" hint and map 422 errors back to fields
+- Context-aware: non-editable fields render disabled — the same component shows a different form per resolved permission variant
+- Headless-friendly: override any widget via the registry (`widgets={{ combobox: MyCombobox }}`)
+
+### Live demo
+
+```bash
+cd js && npm install && npm run dev
+```
+
+Four forms — registration, change password, edit profile, billing details — plus a persona switcher demonstrating one component rendering three different billing forms from `owner:active` / `owner:past_due` / `viewer` contexts. Backed by a mock client serving contract-v1 JSON; swap in `createHttpClient` to point at a real API.
+
+---
+
 ## Escape Hatches
 
 Use the chain for auth and ownership, then break out for custom logic:

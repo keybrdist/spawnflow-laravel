@@ -1,0 +1,12 @@
+{
+  "name": "spawnflow-js",
+  "private": true,
+  "workspaces": [
+    "react-shadcn",
+    "demo"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace demo",
+    "dev": "npm run dev --workspace demo"
+  }
+}

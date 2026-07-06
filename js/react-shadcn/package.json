@@ -1,0 +1,16 @@
+{
+  "name": "@spawnflow/react-shadcn",
+  "version": "0.1.0",
+  "description": "Schema-driven, context-aware form renderer for Spawnflow — shadcn/ui styled, react-hook-form + zod under the hood.",
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "react-hook-form": ">=7",
+    "@hookform/resolvers": ">=3",
+    "zod": ">=3.23"
+  }
+}
