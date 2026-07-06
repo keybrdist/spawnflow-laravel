@@ -171,22 +171,21 @@ class ZodCompiler
     }
 
     /**
-     * Optionality: nullable → .nullable().optional(); not required (and not
-     * always-present) → .optional().
+     * Optionality. Laravel's `required|nullable` means the key must be PRESENT
+     * but may be null — so `required` suppresses `.optional()` even when
+     * nullable, otherwise the client accepts a missing key the server 422s.
      *
      * @param  array<string, array>  $byName
      */
     protected static function presence(array $byName): string
     {
+        $present = isset($byName['required']) || isset($byName['accepted']);
+
         if (isset($byName['nullable'])) {
-            return '.nullable().optional()';
+            return $present ? '.nullable()' : '.nullable().optional()';
         }
 
-        if (! isset($byName['required']) && ! isset($byName['accepted'])) {
-            return '.optional()';
-        }
-
-        return '';
+        return $present ? '' : '.optional()';
     }
 
     /**
@@ -232,9 +231,17 @@ class ZodCompiler
         return $values !== [] && array_filter($values, fn ($value) => ! is_string($value)) === [];
     }
 
+    /**
+     * Single-quoted JS string literal — escapes backslashes, quotes, and
+     * every JS line terminator, mirroring TypeScriptGenerator::tsString().
+     */
     protected static function quote(string $value): string
     {
-        return "'".str_replace(["\\", "'"], ["\\\\", "\\'"], $value)."'";
+        return "'".str_replace(
+            ['\\', "'", "\r", "\n", "\u{2028}", "\u{2029}"],
+            ['\\\\', "\\'", '\\r', '\\n', '\\u2028', '\\u2029'],
+            $value,
+        )."'";
     }
 
     /**

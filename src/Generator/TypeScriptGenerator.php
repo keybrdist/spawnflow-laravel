@@ -34,7 +34,7 @@ class TypeScriptGenerator
         // Field-map type from descriptors.
         $out .= "export type {$prefix}Fields = {\n";
         foreach ($fields as $name => $descriptor) {
-            $out .= "  {$name}: {$this->tsType($descriptor)};\n";
+            $out .= "  {$this->tsKey($name)}: {$this->tsType($descriptor)};\n";
         }
         $out .= "};\n\n";
 
@@ -51,7 +51,7 @@ class TypeScriptGenerator
             $out .= "export const {$schemaName} = z.object({\n";
             foreach ($variant['editable_fields'] as $name) {
                 $expr = ZodCompiler::compile($fields[$name] ?? ['type' => 'string'], $variant['rules'][$name] ?? []);
-                $out .= "  {$name}: {$expr},\n";
+                $out .= "  {$this->tsKey($name)}: {$expr},\n";
             }
             $out .= "});\n\n";
         }
@@ -59,7 +59,7 @@ class TypeScriptGenerator
         // Context-keyed maps.
         $out .= "export const {$this->camel($alias)}Schemas = {\n";
         foreach ($schemaNames as $context => $schemaName) {
-            $out .= "  '{$context}': {$schemaName},\n";
+            $out .= "  {$this->tsString((string) $context)}: {$schemaName},\n";
         }
         $out .= "} as const;\n\n";
 
@@ -69,7 +69,7 @@ class TypeScriptGenerator
         foreach ($variants as $variant) {
             $editable = $this->stringArray($variant['editable_fields']);
             $visible = $this->stringArray($variant['visible_fields']);
-            $out .= "  '{$variant['context']}': { editable: {$editable}, visible: {$visible} },\n";
+            $out .= "  {$this->tsString((string) $variant['context'])}: { editable: {$editable}, visible: {$visible} },\n";
         }
         $out .= "} as const;\n";
 
@@ -80,8 +80,8 @@ class TypeScriptGenerator
             foreach ($variants as $variant) {
                 $editable = $variant['editable_fields'] === []
                     ? 'Record<string, never>'
-                    : "Pick<{$prefix}Fields, ".implode(' | ', array_map(fn ($f) => "'{$f}'", $variant['editable_fields'])).'>';
-                $arms[] = "  | { context: '{$variant['context']}'; editable: {$editable} }";
+                    : "Pick<{$prefix}Fields, ".implode(' | ', array_map($this->tsString(...), $variant['editable_fields'])).'>';
+                $arms[] = '  | { context: '.$this->tsString((string) $variant['context'])."; editable: {$editable} }";
             }
             $out .= implode("\n", $arms).";\n";
         }
@@ -222,7 +222,7 @@ TS;
         }
 
         return implode(' | ', array_map(
-            fn (array $option) => is_string($option['value']) ? "'{$option['value']}'" : (string) $option['value'],
+            fn (array $option) => is_string($option['value']) ? $this->tsString($option['value']) : (string) $option['value'],
             $options,
         ));
     }
@@ -232,7 +232,33 @@ TS;
      */
     protected function stringArray(array $values): string
     {
-        return '['.implode(', ', array_map(fn (string $value) => "'{$value}'", $values)).']';
+        return '['.implode(', ', array_map($this->tsString(...), $values)).']';
+    }
+
+    /**
+     * Single-quoted TS string literal — enum values and context names are
+     * schema data, not identifier-safe input. Escapes backslashes, quotes,
+     * and every JS line terminator (\r \n U+2028 U+2029), any of which would
+     * otherwise break the literal and make the generated file unparseable.
+     */
+    protected function tsString(string $value): string
+    {
+        return "'".str_replace(
+            ['\\', "'", "\r", "\n", "\u{2028}", "\u{2029}"],
+            ['\\\\', "\\'", '\\r', '\\n', '\\u2028', '\\u2029'],
+            $value,
+        )."'";
+    }
+
+    /**
+     * Object property key: bare when a valid TS identifier, quoted otherwise
+     * (field names like 'billing-email' or '2fa_enabled' are valid schema).
+     */
+    protected function tsKey(string $name): string
+    {
+        return preg_match('/^[A-Za-z_$][A-Za-z0-9_$]*$/', $name) === 1
+            ? $name
+            : $this->tsString($name);
     }
 
     protected function camel(string $value): string

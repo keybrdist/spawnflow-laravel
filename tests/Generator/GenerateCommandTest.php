@@ -1,5 +1,10 @@
 <?php
 
+use Spawnflow\Schema\Field;
+use Spawnflow\Schema\FieldSet;
+use Spawnflow\Tests\Fixtures\Post;
+use Spawnflow\Tests\Fixtures\QuotedEnum;
+
 beforeEach(function (): void {
     $this->outputPath = sys_get_temp_dir().'/spawnflow-gen-'.uniqid();
     config()->set('spawnflow.generator', [
@@ -64,4 +69,39 @@ test('fails cleanly without an output path', function (): void {
     config()->set('spawnflow.generator', []);
 
     $this->artisan('spawnflow:generate')->assertFailed();
+});
+
+test('non-identifier field names and quotable enum values emit valid TypeScript', function (): void {
+    config()->set('spawnflow.subjects', array_merge(config('spawnflow.subjects'), [
+        'tricky' => Post::class,
+    ]));
+    config()->set('spawnflow.fields', array_merge(config('spawnflow.fields'), [
+        'tricky' => new class extends FieldSet
+        {
+            public static function fields(): array
+            {
+                return [
+                    Field::string('billing-email'),
+                    Field::bool('2fa_enabled'),
+                    Field::enum('label', QuotedEnum::class),
+                ];
+            }
+        }::class,
+    ]));
+
+    $this->artisan('spawnflow:generate')->assertSuccessful();
+
+    $tricky = file_get_contents("{$this->outputPath}/tricky.ts");
+
+    expect($tricky)
+        // Non-identifier field names are quoted keys, not bare identifiers.
+        ->toContain("'billing-email': string")
+        ->toContain("'2fa_enabled': boolean")
+        // Enum values with quotes/backslashes are escaped, not raw.
+        ->toContain("'it\\'s'")
+        ->toContain("'back\\\\slash'")
+        // Line terminators are escaped — a raw newline inside a single-quoted
+        // literal would make the generated file unparseable.
+        ->toContain("'line\\nbreak'")
+        ->not->toContain("'line\nbreak'");
 });

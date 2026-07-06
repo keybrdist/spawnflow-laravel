@@ -40,10 +40,13 @@ export function compileField(field: FormField): z.ZodTypeAny {
     schema = n;
   }
 
-  if (byName.has('nullable')) return schema.nullable().optional();
-  if (!byName.has('required') && !byName.has('accepted')) return schema.optional();
+  // Laravel required|nullable = key must be PRESENT, value may be null —
+  // required suppresses .optional() even when nullable (mirrors the PHP
+  // ZodCompiler's presence semantics).
+  const present = byName.has('required') || byName.has('accepted');
+  if (byName.has('nullable')) return present ? schema.nullable() : schema.nullable().optional();
 
-  return schema;
+  return present ? schema : schema.optional();
 }
 
 function base(field: FormField, byName: Map<string, (string | number)[]>): z.ZodTypeAny {

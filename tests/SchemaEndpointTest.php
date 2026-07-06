@@ -1,6 +1,9 @@
 <?php
 
+use Spawnflow\ConfigSubjectRegistry;
+use Spawnflow\Schema\SchemaSerializer;
 use Spawnflow\Tests\Fixtures\Post;
+use Spawnflow\Tests\Fixtures\PrivatePostContext;
 use Spawnflow\Tests\Fixtures\User;
 
 function schemaUser(array $attrs = []): User
@@ -130,8 +133,8 @@ test('unknown subject returns 404', function (): void {
 
 test('subject without a context returns the default schema', function (): void {
     config()->set('spawnflow.contexts', []);
-    $registry = new \Spawnflow\ConfigSubjectRegistry;
-    $serializer = new \Spawnflow\Schema\SchemaSerializer($registry);
+    $registry = new ConfigSubjectRegistry;
+    $serializer = new SchemaSerializer($registry);
 
     $schema = $serializer->defaultSchema('posts');
 
@@ -140,4 +143,40 @@ test('subject without a context returns the default schema', function (): void {
         ->and($schema['fields']['title']['editable'])->toBeTrue()
         ->and($schema['fields']['title']['visible'])->toBeTrue()
         ->and($schema['fields']['title']['rules'])->toContainEqual(['rule' => 'required']);
+});
+
+// ---------------------------------------------------------------
+// Deny semantics: FieldContext::resolve() returning null
+// ---------------------------------------------------------------
+
+test('denied resolution is indistinguishable from a missing record', function (): void {
+    config()->set('spawnflow.subjects', array_merge(config('spawnflow.subjects'), [
+        'private-posts' => Post::class,
+    ]));
+    config()->set('spawnflow.contexts', array_merge(config('spawnflow.contexts'), [
+        'private-posts' => PrivatePostContext::class,
+    ]));
+
+    $owner = schemaUser();
+    $stranger = schemaUser();
+    $post = Post::create(['owner_id' => $owner->id, 'title' => 'Secret', 'status' => 'draft']);
+
+    // Owner resolves their variant.
+    $this->actingAs($owner);
+    $this->getJson("/spawnflow/schema/private-posts/{$post->id}")
+        ->assertOk()
+        ->assertJsonPath('context', 'owner');
+
+    // Stranger is DENIED — the response must match a genuinely missing
+    // record (same status, same error shape), so the endpoint cannot be
+    // used to probe other tenants' record IDs.
+    $this->actingAs($stranger);
+    $denied = $this->getJson("/spawnflow/schema/private-posts/{$post->id}");
+    $missing = $this->getJson('/spawnflow/schema/private-posts/999999');
+
+    $denied->assertNotFound();
+    $missing->assertNotFound();
+    expect(array_keys($denied->json()))->toBe(array_keys($missing->json()))
+        ->and($denied->json('error'))->toStartWith('Record not found:')
+        ->and($missing->json('error'))->toStartWith('Record not found:');
 });

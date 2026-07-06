@@ -60,13 +60,24 @@ function TextareaWidget({ value, onChange, onBlur, disabled }: WidgetProps) {
   );
 }
 
+// Wire-aware truthiness: legacy `on_off` boolean fields deliver 'on'/'off'
+// strings, and 'off' is truthy to Boolean() — map the known wire encodings
+// explicitly instead. Submission stays a real boolean (the contract's boolean
+// type); the server converts back to the wire format.
+function isCheckedValue(value: unknown): boolean {
+  if (typeof value === 'string') {
+    return value === 'on' || value === '1' || value === 'true';
+  }
+  return value === true || value === 1;
+}
+
 function CheckboxWidget({ field, value, onChange, disabled }: WidgetProps) {
   return (
     <label className="flex items-center gap-2 text-sm">
       <input
         type="checkbox"
         className="h-4 w-4 rounded border-input accent-primary"
-        checked={Boolean(value)}
+        checked={isCheckedValue(value)}
         onChange={(e) => onChange(e.target.checked)}
         disabled={disabled}
       />

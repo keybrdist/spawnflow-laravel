@@ -87,3 +87,11 @@ test('unmapped client rules surface as unhandled comments', function (): void {
 test('boolean accepted compiles cleanly', function (): void {
     expect(zod(['type' => 'bool'], [['rule' => 'accepted']]))->toBe('z.boolean()');
 });
+
+test('required nullable keeps the key present', function (): void {
+    // Laravel required|nullable = key must be present, value may be null.
+    // .optional() here would let the client accept a payload the server 422s.
+    expect(zod(['type' => 'string'], [['rule' => 'required'], ['rule' => 'nullable'], ['rule' => 'string']]))
+        ->toBe('z.string().min(1).nullable()')
+        ->not->toContain('.optional()');
+});

@@ -1,5 +1,6 @@
 <?php
 
+use Spawnflow\Tests\Fixtures\LookupFields;
 use Spawnflow\Tests\Fixtures\Post;
 use Spawnflow\Tests\Fixtures\User;
 
@@ -80,3 +81,23 @@ test('relation descriptors carry options_url when routes are enabled', function 
     $this->getJson('/spawnflow/schema/articles')
         ->assertJsonPath('fields.post_id.relation.options_url', '/spawnflow/options/articles/post_id');
 });
+
+test('scoped options fail closed when the related table lacks the ownership column', function (): void {
+    config()->set('spawnflow.subjects', array_merge(config('spawnflow.subjects'), [
+        'lookups' => Post::class,
+    ]));
+    config()->set('spawnflow.fields', array_merge(config('spawnflow.fields'), [
+        'lookups' => LookupFields::class,
+    ]));
+
+    $me = optionsUser();
+    optionsUser(); // another tenant's user that must never leak
+
+    $this->actingAs($me);
+    $this->withoutExceptionHandling();
+
+    // users table has no owner_id column; the field is scoped by default —
+    // serving unscoped rows here would leak every tenant. Must throw, not
+    // silently fail open.
+    $this->getJson('/spawnflow/options/lookups/user_id');
+})->throws(RuntimeException::class, 'no \'owner_id\' column');

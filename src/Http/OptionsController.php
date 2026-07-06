@@ -5,6 +5,7 @@ namespace Spawnflow\Http;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use RuntimeException;
 use Spawnflow\Contracts\SubjectRegistry;
 use Spawnflow\Exceptions\UnauthenticatedException;
 use Spawnflow\Schema\FieldType;
@@ -53,9 +54,19 @@ class OptionsController extends Controller
                 ->getSchemaBuilder()
                 ->getColumnListing($related->getTable());
 
-            if (in_array($ownershipColumn, $columns, true)) {
-                $query->where($ownershipColumn, $user->{$userKey});
+            // Fail CLOSED: a scoped field whose related table lacks the
+            // ownership column is a configuration error — silently skipping
+            // the filter would serve every tenant's rows. Declare the field
+            // ->unscoped() explicitly for shared lookup tables.
+            if (! in_array($ownershipColumn, $columns, true)) {
+                throw new RuntimeException(
+                    "Scoped options field '{$fieldName}' on '{$alias}': related table ".
+                    "'{$related->getTable()}' has no '{$ownershipColumn}' column. ".
+                    'Declare the field ->unscoped() if it is a shared lookup.',
+                );
             }
+
+            $query->where($ownershipColumn, $user->{$userKey});
         }
 
         $q = (string) $request->query('q', '');

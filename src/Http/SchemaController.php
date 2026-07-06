@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Spawnflow\ContextResolver;
 use Spawnflow\Contracts\SubjectRegistry;
+use Spawnflow\Exceptions\OwnershipException;
 use Spawnflow\Exceptions\UnauthenticatedException;
 use Spawnflow\Schema\SchemaSerializer;
 
@@ -51,7 +52,15 @@ class SchemaController extends Controller
                 return response()->json(['error' => "Record not found: {$alias}/{$id}"], 404);
             }
 
-            $context = app(ContextResolver::class)->resolve($alias, $user, $record, contextClass: $contextClass);
+            // The context enum is the authorization decision: a user the enum
+            // DENIES (resolve() returned null -> OwnershipException) must get
+            // a response indistinguishable from a missing record, so the
+            // endpoint is not a cross-tenant existence oracle.
+            try {
+                $context = app(ContextResolver::class)->resolve($alias, $user, $record, contextClass: $contextClass);
+            } catch (OwnershipException) {
+                return response()->json(['error' => "Record not found: {$alias}/{$id}"], 404);
+            }
 
             return response()->json($serializer->resolved($alias, $context));
         }
