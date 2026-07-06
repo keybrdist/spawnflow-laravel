@@ -390,6 +390,44 @@ Responses follow the versioned **schema contract v1** (`docs/schema-contract.md`
 
 ---
 
+## Frontend Generation
+
+Generate TypeScript types and Zod schemas from the same contract the schema endpoint serves:
+
+```bash
+php artisan spawnflow:generate            # writes to generator.output_path
+php artisan spawnflow:generate --path=resources/js/generated
+```
+
+Per subject, one module containing:
+
+- `PostsFields` — field-map type from descriptors (enums become literal unions, relations become `number`, nullability respected)
+- `postsFieldMeta` — widgets, labels, options, relation metadata for renderers
+- `postsOwnerDraftSchema`, … — one Zod schema per context variant, compiled from the structured rules
+- `postsSchemas` / `postsVariants` — context-keyed maps of schemas and editable/visible field lists
+- `PostsVariant` — the discriminated union over contexts (`emit_unions`)
+
+Plus `index.ts` and an optional thin fetch client (`emit_client`) for `SpawnflowController` + schema routes.
+
+Zod compilation is honest about its limits: rules a client can't check compile to a trailing `/* server: unique */` comment, unmapped rules to `/* unhandled: ... */` — nothing is silently dropped.
+
+```ts
+export const postsOwnerDraftSchema = z.object({
+  title: z.string().min(1).max(255),
+  body: z.string().nullable().optional(),
+  status: z.enum(['draft', 'published']).optional(),
+});
+
+export type PostsVariant =
+  | { context: 'owner:draft'; editable: Pick<PostsFields, 'title' | 'body' | 'status'> }
+  | { context: 'owner:published'; editable: Pick<PostsFields, 'title'> }
+  | { context: 'viewer'; editable: Record<string, never> };
+```
+
+The generator and the live endpoint emit through one serializer — generated artifacts and API responses cannot drift.
+
+---
+
 ## Escape Hatches
 
 Use the chain for auth and ownership, then break out for custom logic:

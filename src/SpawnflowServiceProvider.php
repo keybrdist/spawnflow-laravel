@@ -26,6 +26,10 @@ class SpawnflowServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__.'/../stubs' => base_path('stubs/spawnflow'),
             ], 'spawnflow-stubs');
+
+            $this->commands([
+                \Spawnflow\Console\GenerateCommand::class,
+            ]);
         }
 
         $this->registerSchemaRoutes();
