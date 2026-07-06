@@ -184,19 +184,22 @@ class Flow
      * headers is returned instead of executing the rest of the chain.
      *
      * @param  array<string, string|array>|null  $rules  Explicit rules (overrides all sources).
+     * @param  array<string, mixed>|null  $data  Data to validate (defaults to the request body) — for chains that unwrap or transform payloads before saving.
      */
-    public function validate(?array $rules = null): static
+    public function validate(?array $rules = null, ?array $data = null): static
     {
         $rules ??= $this->subjectAlias !== null
             ? (new RuleResolver($this->registry))->for($this->subjectAlias, $this->context)
             : ($this->context?->validation() ?? []);
 
+        $data ??= $this->request->all();
+
         if ($this->request->headers->has('Precognition')) {
-            $this->validatePrecognitive($rules);
+            $this->validatePrecognitive($rules, $data);
         }
 
         if ($rules !== []) {
-            Validator::make($this->request->all(), $rules)->validate();
+            Validator::make($data, $rules)->validate();
         }
 
         return $this;
@@ -210,8 +213,9 @@ class Flow
      * Precognition headers on error responses too.
      *
      * @param  array<string, string|array>  $rules
+     * @param  array<string, mixed>  $data
      */
-    protected function validatePrecognitive(array $rules): never
+    protected function validatePrecognitive(array $rules, array $data): never
     {
         $only = $this->request->headers->get('Precognition-Validate-Only');
 
@@ -220,7 +224,7 @@ class Flow
         }
 
         if ($rules !== []) {
-            Validator::make($this->request->all(), $rules)->validate();
+            Validator::make($data, $rules)->validate();
         }
 
         throw new HttpResponseException(

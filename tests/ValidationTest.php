@@ -188,3 +188,17 @@ test('form request bridge resolves create context from a synthetic record', func
         ->assertOk();
     expect($published->json())->not->toHaveKey('body');
 });
+
+test('validate accepts explicit data for wrapped or transformed payloads', function (): void {
+    $user = validationUser();
+
+    $chain = fn (array $payload) => (new Flow)
+        ->spawn(requestFor($user, ['payload' => $payload]))->auth()
+        ->resolve('articles')
+        ->validate(data: $payload);
+
+    expect(fn () => $chain([])) ->toThrow(ValidationException::class);
+
+    $chain(['title' => 'From wrapped payload']);
+    expect(true)->toBeTrue();
+});
