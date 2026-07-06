@@ -45,6 +45,8 @@ final class Field
 
     private bool $multiple = false;
 
+    private bool $scoped = true;
+
     private function __construct(
         public readonly string $name,
         public readonly FieldType $type,
@@ -248,6 +250,17 @@ final class Field
         return $this;
     }
 
+    /**
+     * Serve options globally instead of scoping them to the caller's
+     * ownership (for shared lookups like countries or plans).
+     */
+    public function unscoped(): self
+    {
+        $this->scoped = false;
+
+        return $this;
+    }
+
     // ---------------------------------------------------------------
     // Accessors
     // ---------------------------------------------------------------
@@ -313,6 +326,11 @@ final class Field
     public function isMultiple(): bool
     {
         return $this->multiple;
+    }
+
+    public function isScoped(): bool
+    {
+        return $this->scoped;
     }
 
     /**

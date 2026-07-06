@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ContextResolver` — single definition of context resolution (synthetic record on create), shared by `Flow::fields()`, the schema endpoint, and the FormRequest bridge
 - `Field::impliedRawRules()` — single definition of descriptor-implied rules, consumed by both the schema serializer and the server-side rule resolver
 
+- **Options endpoint** — `GET /spawnflow/options/{subject}/{field}?q=&page=&per_page=`: `{value, label}` pages for relation select/combobox widgets; ownership-scoped by default (`unscoped()` for shared lookups), `q` search on the display column for `searchable()` fields, `next_page` pagination; relation descriptors now carry `options_url` when schema routes are enabled; generated client gains `options()`
 - **Frontend generator** — `php artisan spawnflow:generate` (fills the long-dormant `generator` config block):
   - `Generator\TypeScriptGenerator` — per-subject modules: field-map types, field metadata, per-variant Zod schemas, context-keyed maps, discriminated variant unions (`emit_unions`), index, optional fetch client (`emit_client`)
   - `Generator\ZodCompiler` — structured rules → Zod expressions; serverOnly rules emit `/* server: ... */` comments, unmapped rules `/* unhandled: ... */` — nothing silently dropped

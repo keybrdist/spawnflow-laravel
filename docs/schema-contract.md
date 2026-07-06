@@ -86,7 +86,7 @@ The per-field identity object. Keys are omitted when at their default.
 | `wire` | string | Declared wire format for legacy coercions (e.g. `on_off` for booleans stored as `'on'/'off'`). Both sides coerce from this one declaration. |
 | `writeOnly` | bool | Accepted on write, never in responses (passwords). Present only when true. |
 | `options` | array | Enum fields only. `{value, label}` pairs; labels come from a `label()` method on the enum when defined, else humanized case names. Respects `only()` restrictions. |
-| `relation` | object | Relation fields only. `subject` is the registered alias of the related model (null if unregistered). `options_url` is **reserved** — it will appear when the options endpoint ships (Phase 4). |
+| `relation` | object | Relation fields only. `subject` is the registered alias of the related model (null if unregistered). `options_url` is present when the schema routes are enabled — the options endpoint for this field. |
 
 ---
 
@@ -211,6 +211,31 @@ declared field editable and visible with its base rules:
 ```json
 { "spawnflow": "1", "resource": "posts", "context": "default", "fields": { "...": "..." } }
 ```
+
+---
+
+## Options endpoint
+
+`GET /spawnflow/options/{subject}/{field}?q=&page=&per_page=` — the data
+source behind relation select/combobox widgets. Registered alongside the
+schema routes, behind the same middleware; requires authentication.
+
+```json
+{
+  "options": [ {"value": 7, "label": "Marketing"}, {"value": 12, "label": "Sales"} ],
+  "page": 1,
+  "next_page": 2
+}
+```
+
+- `value` is the related model's primary key; `label` its `display` column.
+- **Scoping:** options are restricted to the caller's ownership when the
+  field is scoped (the default) and the related table has the ownership
+  column. Fields declared `unscoped()` serve globally (shared lookups like
+  countries or plans).
+- `q` filters on the display column (only for `searchable()` fields).
+- `per_page` caps at 100; `next_page` is null on the last page.
+- Unknown subject, unknown field, or a non-relation field → 404.
 
 ---
 

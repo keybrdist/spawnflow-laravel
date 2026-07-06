@@ -46,6 +46,7 @@ class SpawnflowServiceProvider extends ServiceProvider
             ->group(function (): void {
                 Route::get('/schema/{subject}/{id?}', [SchemaController::class, 'show'])
                     ->whereNumber('id');
+                Route::get('/options/{subject}/{field}', [\Spawnflow\Http\OptionsController::class, 'show']);
             });
     }
 }

@@ -151,6 +151,18 @@ export function createSpawnflowClient(options: SpawnflowClientOptions = {}) {
     destroy: (subject: string, id: number) => request<void>('DELETE', `/${subject}/${id}`),
     schema: <T>(subject: string, id?: number) =>
       request<T>('GET', `/spawnflow/schema/${subject}${id === undefined ? '' : `/${id}`}`),
+    options: (subject: string, field: string, params: { q?: string; page?: number; per_page?: number } = {}) => {
+      const query = new URLSearchParams(
+        Object.entries(params)
+          .filter(([, v]) => v !== undefined && v !== '')
+          .map(([k, v]) => [k, String(v)]),
+      );
+      const qs = query.size ? `?${query}` : '';
+      return request<{ options: { value: number; label: string }[]; page: number; next_page: number | null }>(
+        'GET',
+        `/spawnflow/options/${subject}/${field}${qs}`,
+      );
+    },
   };
 }
 TS;

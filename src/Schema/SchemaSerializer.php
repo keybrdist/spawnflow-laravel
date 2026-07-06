@@ -45,7 +45,7 @@ class SchemaSerializer
             $field = $this->fieldFor($alias, $name);
             $isEditable = isset($editable[$name]);
 
-            $descriptor = $this->describeField($field) + [
+            $descriptor = $this->describeField($field, $alias) + [
                 'editable' => $isEditable,
                 'visible' => isset($visible[$name]),
             ];
@@ -115,7 +115,7 @@ class SchemaSerializer
         $fields = [];
         foreach ($fieldSet ? array_keys($fieldSet::all()) : [] as $name) {
             $field = $this->fieldFor($alias, $name);
-            $fields[$name] = $this->describeField($field) + [
+            $fields[$name] = $this->describeField($field, $alias) + [
                 'editable' => true,
                 'visible' => true,
                 'rules' => $this->effectiveRules($field, null),
@@ -139,7 +139,7 @@ class SchemaSerializer
      * relation semantics. Permission flags and rules are contributed by
      * the variant layer, not here.
      */
-    public function describeField(Field $field): array
+    public function describeField(Field $field, ?string $alias = null): array
     {
         $descriptor = [
             'type' => $field->type->value,
@@ -174,6 +174,10 @@ class SchemaSerializer
                 'searchable' => $field->isSearchable(),
                 'multiple' => $field->isMultiple(),
             ];
+
+            if ($alias !== null && config('spawnflow.schema_routes', false)) {
+                $descriptor['relation']['options_url'] = "/spawnflow/options/{$alias}/{$field->name}";
+            }
         }
 
         return $descriptor;
@@ -240,7 +244,7 @@ class SchemaSerializer
     {
         $fields = [];
         foreach ($this->fieldNames($alias, $cases) as $name) {
-            $fields[$name] = $this->describeField($this->fieldFor($alias, $name));
+            $fields[$name] = $this->describeField($this->fieldFor($alias, $name), $alias);
         }
 
         return $fields;
