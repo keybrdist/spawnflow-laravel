@@ -8,7 +8,7 @@ const tabs: { id: Tab; label: string; blurb: string }[] = [
   { id: 'register', label: 'Registration', blurb: 'Create flow. Zod handles required/email/min instantly; the unique-email check is flagged server-checked and enforced on submit (try taken@example.com).' },
   { id: 'password', label: 'Change password', blurb: 'Non-CRUD form on the same machinery. current_password is server-only (correct value: password123); the confirmed rule pairs a confirmation input automatically.' },
   { id: 'profile', label: 'Edit profile', blurb: 'Update flow with enum selects and an async searchable team combobox fed by the options endpoint. Sam’s unverified context locks bio and team.' },
-  { id: 'billing', label: 'Billing details', blurb: 'The context showstopper: one component, three variants. Switch personas — owner:active edits everything, owner:past_due locks all but email and plan, viewer is read-only.' },
+  { id: 'billing', label: 'Billing details', blurb: 'The context showstopper: one component, three variants (switch personas) — PLUS live eligibility: flip Account type to Personal and the Tax details section vanishes; the server enforces the same rule on save.' },
 ];
 
 export default function App() {

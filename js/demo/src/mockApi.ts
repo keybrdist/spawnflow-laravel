@@ -49,6 +49,7 @@ export const records = {
     verified_badge: 'yes',
   },
   billing: {
+    account_type: 'business',
     billing_email: 'billing@example.com',
     country: 'PT',
     vat_id: 'PT123456789',
@@ -170,6 +171,16 @@ function billingSchema(persona: Persona): ResolvedSchema {
     resource: 'billing',
     context,
     fields: {
+      account_type: f({
+        type: 'enum', widget: 'select', label: 'Account type',
+        options: [
+          { value: 'personal', label: 'Personal' },
+          { value: 'business', label: 'Business' },
+        ],
+        default: 'personal',
+        rules: [r('required'), r('in', ['personal', 'business'])],
+        ...ifFull,
+      }),
       billing_email: f({
         type: 'email', widget: 'input', label: 'Billing email',
         rules: [r('required'), r('email')],
@@ -194,6 +205,26 @@ function billingSchema(persona: Persona): ResolvedSchema {
         ...ifOwner,
       }),
       card_last4: f({ type: 'string', widget: 'input', label: 'Card (last 4)', editable: false }),
+    },
+    // Live eligibility: the tax section only exists for business
+    // accounts. The renderer re-evaluates as the select changes; the
+    // server enforces the same rule on save (clear-on-ineligible).
+    groups: [
+      {
+        name: 'tax',
+        label: 'Tax details',
+        fields: ['country', 'vat_id'],
+        eligibility: [
+          { effect: 'show', condition: { '==': [{ var: 'account_type' }, 'business'] } },
+        ],
+      },
+    ],
+    resolved: {
+      country: { visible: true, enabled: true },
+      vat_id: { visible: true, enabled: true },
+    },
+    resolved_groups: {
+      tax: { visible: true, enabled: true },
     },
   };
 }
