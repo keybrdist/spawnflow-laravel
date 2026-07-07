@@ -29,6 +29,7 @@ class SpawnflowServiceProvider extends ServiceProvider
 
             $this->commands([
                 \Spawnflow\Console\GenerateCommand::class,
+                \Spawnflow\Console\MakeContextCommand::class,
             ]);
         }
 

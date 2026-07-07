@@ -35,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Generator consumes the contract via the same `SchemaSerializer` as the live endpoint — no drift possible
   - Generated output verified against `tsc --strict` with zod
 
+- **`make:spawnflow-context` command** — scaffolds a `FieldContext` enum from the published stub into `App\Spawnflow`; `--force` overwrites. Consumes the previously-orphaned `stubs/context-enum.stub`.
+
 ### Changed
 - `SchemaController` responses now follow schema contract v1 (`spawnflow: "1"`, joined descriptors, structured rules per variant); previous ad-hoc response shapes replaced
 - Resolved schema endpoint (`/schema/{subject}/{id}`) no longer requires ownership: resolution is read-only, any authenticated user gets their variant (viewer cases now reachable); missing record → 404

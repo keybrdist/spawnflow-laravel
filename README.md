@@ -159,6 +159,14 @@ Field-level permissions use **context enums** — PHP enums that encode every ro
 
 ### Define a context enum
 
+Scaffold one from the stub:
+
+```bash
+php artisan make:spawnflow-context PostContext   # → app/Spawnflow/PostContext.php
+```
+
+Then fill in the `editableFields()`, `validation()`, and `visibleFields()` cases:
+
 ```php
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User;
