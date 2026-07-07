@@ -1,0 +1,18 @@
+<?php
+
+namespace {{ namespace }};
+
+use Spawnflow\Attributes\SpawnSubject;
+use Spawnflow\Schema\Field;
+use Spawnflow\Schema\FieldSet;
+
+#[SpawnSubject('{{ alias }}', model: \{{ model }}::class{{ contextArg }})]
+class {{ class }} extends FieldSet
+{
+    public static function fields(): array
+    {
+        return [
+{{ fields }}
+        ];
+    }
+}

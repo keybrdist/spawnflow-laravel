@@ -59,6 +59,28 @@ php artisan vendor:publish --tag=spawnflow-config
 
 ## Quick Start
 
+### The 3-command path
+
+From an existing table to a registered, permission-aware resource:
+
+```bash
+composer require spawnflow/spawnflow-laravel
+php artisan spawnflow:install
+php artisan spawnflow:resource Post --generate
+```
+
+`--generate` reads the table's real columns and foreign keys and writes
+`app/Spawnflow/PostFields.php` + `PostContext.php`. The FieldSet carries
+`#[SpawnSubject('posts', ...)]`, so it registers itself — no config edit.
+Every additional resource is one more command. Inference is make-time
+only: the generated files are the canonical, editable declarations.
+
+Deploy-time: `php artisan spawnflow:cache` freezes attribute discovery
+(mirroring Laravel's bootstrap caches); `spawnflow:clear` unfreezes.
+
+Prefer explicit config? Everything below still works — config entries
+override discovered ones.
+
 ### 1. Register subjects
 
 Map URL segments to Eloquent models in `config/spawnflow.php`:

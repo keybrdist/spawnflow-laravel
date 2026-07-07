@@ -25,8 +25,7 @@ enum {{ class }}: string implements FieldContext
     {
         return match ($this) {
             self::Owner => [
-                // 'title',
-                // 'description',
+{{ ownerEditable }}
             ],
             self::Viewer => [],
         };
@@ -36,7 +35,7 @@ enum {{ class }}: string implements FieldContext
     {
         return match ($this) {
             self::Owner => [
-                // 'title' => 'required|string|max:255',
+{{ ownerValidation }}
             ],
             self::Viewer => [],
         };
@@ -46,14 +45,10 @@ enum {{ class }}: string implements FieldContext
     {
         return match ($this) {
             self::Owner => [
-                'id',
-                // 'title',
-                // 'description',
-                // 'createdAt',
+{{ ownerVisible }}
             ],
             self::Viewer => [
-                'id',
-                // 'title',
+{{ viewerVisible }}
             ],
         };
     }

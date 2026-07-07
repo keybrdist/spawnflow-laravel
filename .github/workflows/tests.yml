@@ -40,3 +40,68 @@ jobs:
 
       - name: Run tests
         run: vendor/bin/pest
+
+  mysql-introspection:
+    runs-on: ubuntu-latest
+    name: MySQL introspection (PHP 8.3 / Laravel 12)
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: spawnflow_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: mbstring, sqlite3, pdo_mysql
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-dist --no-interaction
+
+      - name: Run introspection tests against MySQL
+        env:
+          SPAWNFLOW_MYSQL_HOST: 127.0.0.1
+          SPAWNFLOW_MYSQL_PORT: 3306
+          SPAWNFLOW_MYSQL_DATABASE: spawnflow_test
+          SPAWNFLOW_MYSQL_USERNAME: root
+          SPAWNFLOW_MYSQL_PASSWORD: root
+        run: vendor/bin/pest --group=mysql-introspection
+
+  js:
+    runs-on: ubuntu-latest
+    name: JS (core conformance + typecheck + demo build)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        working-directory: js
+        run: npm ci
+
+      - name: Core tests (conformance fixtures)
+        working-directory: js
+        run: npm test
+
+      - name: Typecheck + demo build
+        working-directory: js
+        run: |
+          npm run typecheck
+          npm run build

@@ -28,8 +28,12 @@ class SpawnflowServiceProvider extends ServiceProvider
             ], 'spawnflow-stubs');
 
             $this->commands([
+                \Spawnflow\Console\CacheCommand::class,
+                \Spawnflow\Console\ClearCommand::class,
                 \Spawnflow\Console\GenerateCommand::class,
+                \Spawnflow\Console\InstallCommand::class,
                 \Spawnflow\Console\MakeContextCommand::class,
+                \Spawnflow\Console\ResourceCommand::class,
             ]);
         }
 

@@ -3,6 +3,7 @@
 namespace Spawnflow\Console;
 
 use Illuminate\Console\GeneratorCommand;
+use Spawnflow\Generator\Scaffolder;
 use Symfony\Component\Console\Input\InputOption;
 
 class MakeContextCommand extends GeneratorCommand
@@ -25,6 +26,19 @@ class MakeContextCommand extends GeneratorCommand
     protected function getDefaultNamespace($rootNamespace): string
     {
         return $rootNamespace.'\Spawnflow';
+    }
+
+    protected function buildClass($name): string
+    {
+        // Same stub pipeline as spawnflow:resource (Scaffolder) — bare
+        // scaffolds get the commented example lists.
+        $stub = parent::buildClass($name);
+
+        foreach (Scaffolder::defaultContextLists() as $token => $block) {
+            $stub = str_replace('{{ '.$token.' }}', $block, $stub);
+        }
+
+        return $stub;
     }
 
     protected function getOptions(): array

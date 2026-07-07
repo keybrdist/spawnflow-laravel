@@ -50,6 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Numeric equality parity: PHP `==` compares numbers by value (int 1 == float 1.0) matching JS's single number type; pinned by fixtures
 - **Field groups** — `Schema\Group`: first-class eligibility nodes (sections / wizard steps) declared via `FieldSet::groups()`; same rule envelope as fields; AND-composition (hidden group hides members regardless of their own rules); single-membership validated; wire keys `groups` + `resolved_groups`; per-field `resolved` verdicts are final (own ∧ group); guard covers group rules (variant exposing any member must see the references)
 
+- **The 3-command path** — `spawnflow:install` + `spawnflow:resource {Name} --generate`:
+  - `#[SpawnSubject('alias', model: ..., context: ...)]` attribute + `Discovery\SubjectDiscovery` — FieldSets under `app/Spawnflow` self-register; config overrides attributes on conflict; `spawnflow:cache`/`spawnflow:clear` freeze/unfreeze the scan (presence-decides, like Laravel's bootstrap caches); generating a resource busts the cache
+  - `Generator\TableIntrospector` — real columns + FK constraints → Field descriptor lines (varchar/text/tinyint(1)/decimal/date/datetime/json/enum→`in:` scaffold, FKs→`belongsTo` when the model exists); PK, timestamps, and the ownership column never become descriptors; make-time only, generated files stay canonical
+  - `Generator\Scaffolder` — ONE stub pipeline for `make:spawnflow-context` and `spawnflow:resource` (tokenized stubs, shared renderer); `stubs/fieldset.stub` added
+  - MySQL-service CI job for introspection tests (`--group=mysql-introspection`, env-gated, skips locally without MySQL); JS CI job (conformance + typecheck + demo build)
+
 ### Changed
 - `SchemaController` responses now follow schema contract v1 (`spawnflow: "1"`, joined descriptors, structured rules per variant); previous ad-hoc response shapes replaced
 - Resolved schema endpoint (`/schema/{subject}/{id}`) no longer requires ownership: resolution is read-only, any authenticated user gets their variant (viewer cases now reachable); missing record → 404

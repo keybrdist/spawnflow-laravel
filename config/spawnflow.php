@@ -45,6 +45,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Attribute Discovery
+    |--------------------------------------------------------------------------
+    |
+    | FieldSets carrying #[SpawnSubject('alias', model: ..., context: ...)]
+    | under the discovery path register themselves — no config entry
+    | needed (spawnflow:resource generates them this way). Config entries
+    | above override discovered ones on conflict. Deploy-time:
+    | `spawnflow:cache` freezes the scan; `spawnflow:clear` unfreezes.
+    |
+    */
+    'discovery' => true,
+    'discovery_path' => null, // defaults to app_path('Spawnflow')
+
+    /*
+    |--------------------------------------------------------------------------
     | Ownership
     |--------------------------------------------------------------------------
     |

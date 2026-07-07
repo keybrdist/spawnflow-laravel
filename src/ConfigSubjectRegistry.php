@@ -4,6 +4,7 @@ namespace Spawnflow;
 
 use Illuminate\Database\Eloquent\Model;
 use Spawnflow\Contracts\SubjectRegistry;
+use Spawnflow\Discovery\SubjectDiscovery;
 use Spawnflow\Exceptions\UnresolvableSubjectException;
 
 class ConfigSubjectRegistry implements SubjectRegistry
@@ -19,9 +20,15 @@ class ConfigSubjectRegistry implements SubjectRegistry
 
     public function __construct()
     {
-        $this->subjects = config('spawnflow.subjects', []);
-        $this->contexts = config('spawnflow.contexts', []);
-        $this->fields = config('spawnflow.fields', []);
+        // Attribute-discovered subjects register themselves; config
+        // entries override them on conflict.
+        $discovered = config('spawnflow.discovery', true)
+            ? SubjectDiscovery::discover()
+            : ['subjects' => [], 'contexts' => [], 'fields' => []];
+
+        $this->subjects = array_merge($discovered['subjects'], config('spawnflow.subjects', []));
+        $this->contexts = array_merge($discovered['contexts'], config('spawnflow.contexts', []));
+        $this->fields = array_merge($discovered['fields'], config('spawnflow.fields', []));
     }
 
     public function resolve(string $alias): Model
