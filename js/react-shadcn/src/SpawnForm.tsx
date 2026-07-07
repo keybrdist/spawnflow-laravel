@@ -1,9 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import type { FormField, Schema, SpawnClient, SubmitResult } from './contract';
-import { normalize } from './contract';
-import { compileForm } from './rules';
+import type { FormField, GroupDescriptor, Schema, SpawnClient, SubmitResult, Verdict } from '@spawnflow/core';
+import { compileForm, fieldVerdicts, normalize } from '@spawnflow/core';
 import { defaultWidgets, type WidgetComponent } from './widgets';
 
 export interface SpawnFormProps {
@@ -95,10 +94,8 @@ function ResolvedForm({
   id,
 }: Required<Pick<SpawnFormProps, 'schema' | 'submitLabel' | 'hideReadOnly'>> &
   Pick<SpawnFormProps, 'context' | 'values' | 'onSubmit' | 'widgets' | 'client' | 'id'> & { subject: string }) {
-  const { context: resolvedContext, fields } = useMemo(
-    () => normalize(schema!, context),
-    [schema, context],
-  );
+  const normalized = useMemo(() => normalize(schema!, context), [schema, context]);
+  const { context: resolvedContext, fields, groups } = normalized;
 
   const zodSchema = useMemo(() => compileForm(fields), [fields]);
   const registry = { ...defaultWidgets, ...widgets };
@@ -128,6 +125,13 @@ function ResolvedForm({
   });
 
   async function onValid(data: Record<string, unknown>) {
+    // Mirror the server's clear-on-ineligible semantics: values of
+    // rule-ineligible fields are discarded, not submitted.
+    const finalVerdicts = fieldVerdicts(normalized, data);
+    for (const [name, verdict] of Object.entries(finalVerdicts)) {
+      if (!verdict.visible || !verdict.enabled) delete data[name];
+    }
+
     const result = onSubmit
       ? await onSubmit(data as Record<string, unknown>)
       : client
@@ -144,20 +148,43 @@ function ResolvedForm({
     setSucceeded(true);
   }
 
-  const visible = fields.filter((f) => f.visible || f.editable).filter((f) => !hideReadOnly || f.editable);
+  // Live rule verdicts: re-evaluated as values change, mirroring the
+  // server's Eligibility::fieldVerdicts(). Hidden fields unmount;
+  // disabled fields render but reject input.
+  const watched = form.watch();
+  const verdicts: Record<string, Verdict> = fieldVerdicts(normalized, watched);
+
+  const visible = fields
+    .filter((f) => f.visible || f.editable)
+    .filter((f) => !hideReadOnly || f.editable)
+    .filter((f) => verdicts[f.name]?.visible !== false);
+
+  const ungrouped = visible.filter((f) => !f.group);
+  const sections = groups
+    .map((group) => ({ group, members: visible.filter((f) => f.group === group.name) }))
+    .filter(({ members }) => members.length > 0);
+
+  const row = (field: FormField) => (
+    <FieldRow
+      key={field.name}
+      field={field}
+      form={form}
+      registry={registry}
+      client={client}
+      subject={subject}
+      values={values}
+      disabled={verdicts[field.name]?.enabled === false}
+    />
+  );
 
   return (
     <form onSubmit={(e) => void submit(e)} className="space-y-4" data-context={resolvedContext}>
-      {visible.map((field) => (
-        <FieldRow
-          key={field.name}
-          field={field}
-          form={form}
-          registry={registry}
-          client={client}
-          subject={subject}
-          values={values}
-        />
+      {ungrouped.map(row)}
+      {sections.map(({ group, members }) => (
+        <fieldset key={group.name} className="space-y-4 rounded-lg border p-4" data-group={group.name}>
+          <legend className="px-1 text-sm font-medium">{group.label}</legend>
+          {members.map(row)}
+        </fieldset>
       ))}
       {formError && <p className="text-sm text-destructive">{formError}</p>}
       {succeeded && <p className="text-sm text-emerald-600">Saved.</p>}
@@ -179,6 +206,7 @@ function FieldRow({
   client,
   subject,
   values,
+  disabled = false,
 }: {
   field: FormField;
   form: ReturnType<typeof useForm>;
@@ -186,6 +214,7 @@ function FieldRow({
   client?: SpawnClient;
   subject: string;
   values?: Record<string, unknown>;
+  disabled?: boolean;
 }) {
   const Widget = registry[field.widget] ?? registry.input;
   const confirmed = field.rules.some((r) => r.rule === 'confirmed');
@@ -218,7 +247,7 @@ function FieldRow({
               value={rhf.value}
               onChange={rhf.onChange}
               onBlur={rhf.onBlur}
-              disabled={false}
+              disabled={disabled}
               error={fieldState.error?.message}
               client={client}
               subject={subject}

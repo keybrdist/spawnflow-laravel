@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@spawnflow/react-shadcn': path.resolve(__dirname, '../react-shadcn/src/index.ts'),
+      '@spawnflow/core': path.resolve(__dirname, '../core/src/index.ts'),
     },
   },
 });

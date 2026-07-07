@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
@@ -11,8 +15,17 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@spawnflow/react-shadcn": ["../react-shadcn/src/index.ts"]
+      "@spawnflow/react-shadcn": [
+        "../react-shadcn/src/index.ts"
+      ],
+      "@spawnflow/core": [
+        "../core/src/index.ts"
+      ]
     }
   },
-  "include": ["src", "../react-shadcn/src"]
+  "include": [
+    "src",
+    "../react-shadcn/src",
+    "../core/src"
+  ]
 }

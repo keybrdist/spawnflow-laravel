@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { FieldOption, FormField, SpawnClient } from './contract';
+import type { FieldOption, FormField, SpawnClient } from '@spawnflow/core';
 
 export interface WidgetProps {
   field: FormField;

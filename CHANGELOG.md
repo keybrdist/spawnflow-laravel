@@ -45,6 +45,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Write-path enforcement: `Flow::save()` discards rule-ineligible field values (clear-on-ineligible); `Flow::validate()` skips their rules; rules are never cosmetic
   - `resources/conformance/eligibility-fixtures.json` — single cross-runtime conformance suite (Pest now, vitest via `@spawnflow/core`)
   - No cycles by construction: conditions reference values, never other fields' eligibility
+- **`@spawnflow/core`** — framework-agnostic TS core extracted from the React renderer (contract types, rule→Zod compiler, HTTP client) plus the JS eligibility evaluator: same restricted op allowlist and fail-closed semantics as PHP, verified against the SAME `resources/conformance/eligibility-fixtures.json` (46 cases, both suites); `fieldVerdicts()` mirrors `Eligibility::fieldVerdicts()` incl. group AND-composition and serverResolved verdict pass-through
+- **react-shadcn eligibility wiring** — `@spawnflow/react-shadcn` now consumes `@spawnflow/core`; `<SpawnForm>` re-evaluates rules live as values change (hidden fields unmount, disabled fields reject input), renders groups as bordered sections, and discards rule-ineligible values on submit (client mirror of clear-on-ineligible)
+- Numeric equality parity: PHP `==` compares numbers by value (int 1 == float 1.0) matching JS's single number type; pinned by fixtures
 - **Field groups** — `Schema\Group`: first-class eligibility nodes (sections / wizard steps) declared via `FieldSet::groups()`; same rule envelope as fields; AND-composition (hidden group hides members regardless of their own rules); single-membership validated; wire keys `groups` + `resolved_groups`; per-field `resolved` verdicts are final (own ∧ group); guard covers group rules (variant exposing any member must see the references)
 
 ### Changed

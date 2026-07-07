@@ -8,6 +8,8 @@
     { "name": "eq matches", "condition": { "==": [{ "var": "a" }, "x"] }, "data": { "a": "x" }, "expect": true },
     { "name": "eq is strict across types", "condition": { "==": [{ "var": "a" }, 1] }, "data": { "a": "1" }, "expect": false },
     { "name": "eq bool vs int is strict", "condition": { "==": [{ "var": "a" }, true] }, "data": { "a": 1 }, "expect": false },
+    { "name": "eq int and float compare by value", "condition": { "==": [{ "var": "a" }, 1.0] }, "data": { "a": 1 }, "expect": true },
+    { "name": "in array int matches float member", "condition": { "in": [{ "var": "n" }, [1.0, 2.0]] }, "data": { "n": 1 }, "expect": true },
     { "name": "eq null against present null", "condition": { "==": [{ "var": "a" }, null] }, "data": { "a": null }, "expect": true },
     { "name": "neq", "condition": { "!=": [{ "var": "a" }, "x"] }, "data": { "a": "y" }, "expect": true },
     { "name": "eq wrong operand count errors", "condition": { "==": [1] }, "data": {}, "expect": "error" },

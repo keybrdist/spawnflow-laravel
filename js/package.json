@@ -2,11 +2,14 @@
   "name": "spawnflow-js",
   "private": true,
   "workspaces": [
+    "core",
     "react-shadcn",
     "demo"
   ],
   "scripts": {
     "build": "npm run build --workspace demo",
-    "dev": "npm run dev --workspace demo"
+    "dev": "npm run dev --workspace demo",
+    "test": "npm run test --workspace @spawnflow/core",
+    "typecheck": "npm run typecheck --workspace @spawnflow/core"
   }
 }

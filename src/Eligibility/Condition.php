@@ -94,8 +94,8 @@ final class Condition
         return match ($operator) {
             'var' => self::evaluateVar($args, $data),
             'missing' => self::evaluateMissing($args, $data),
-            '==' => self::binary($args, $data, fn ($a, $b) => $a === $b),
-            '!=' => self::binary($args, $data, fn ($a, $b) => $a !== $b),
+            '==' => self::binary($args, $data, self::equals(...)),
+            '!=' => self::binary($args, $data, fn ($a, $b) => ! self::equals($a, $b)),
             '>' => self::numeric($args, $data, fn ($a, $b) => $a > $b),
             '<' => self::numeric($args, $data, fn ($a, $b) => $a < $b),
             '>=' => self::numeric($args, $data, fn ($a, $b) => $a >= $b),
@@ -155,12 +155,33 @@ final class Condition
         return $absent;
     }
 
+    /**
+     * Strict equality with one carve-out: numbers compare by VALUE, so
+     * int 1 equals float 1.0 — JS has a single number type, and PHP's
+     * `===` would otherwise diverge from it on JSON-decoded numerics.
+     * Cross-type comparisons ("1" vs 1) stay false.
+     */
+    private static function equals(mixed $a, mixed $b): bool
+    {
+        if ((is_int($a) || is_float($a)) && (is_int($b) || is_float($b))) {
+            return $a == $b;
+        }
+
+        return $a === $b;
+    }
+
     private static function evaluateIn(mixed $args, array $data): bool
     {
         [$needle, $haystack] = self::operands($args, $data, 'in');
 
         if (is_array($haystack)) {
-            return in_array($needle, $haystack, true);
+            foreach ($haystack as $candidate) {
+                if (self::equals($needle, $candidate)) {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         if (is_string($haystack) && is_string($needle)) {
