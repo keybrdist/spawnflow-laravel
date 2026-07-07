@@ -3,6 +3,8 @@
 namespace Spawnflow\Livewire;
 
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Spawnflow\ContextResolver;
 use Spawnflow\Contracts\SubjectRegistry;
@@ -63,7 +65,7 @@ class SpawnForm extends Component
         $this->success = null;
 
         $flow = (new Flow)
-            ->spawn(request())
+            ->spawn(app(Request::class))
             ->auth()
             ->resolve($this->subject);
 
@@ -125,7 +127,7 @@ class SpawnForm extends Component
 
         $context = app(ContextResolver::class)->resolve(
             $this->subject,
-            auth()->user() ?? request()->user(),
+            Auth::user() ?? app(Request::class)->user(),
             $record,
             $this->values,
         );

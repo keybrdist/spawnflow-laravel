@@ -88,7 +88,10 @@ class TableIntrospector
             return "Field::int('{$name}') /* FK to {$foreignTable} — point Field::belongsTo() at its model */";
         }
 
-        if (str_contains($name, 'email')) {
+        // Email only when the column IS an email address — 'email',
+        // 'contact_email', 'billingEmail' — not merely email-related
+        // ('emailSubject', 'emailBodyHtml' are strings).
+        if (preg_match('/(^|_)email$|Email$/', $name) === 1 || str_contains($name, 'email_address') || str_contains($name, 'emailAddress')) {
             return "Field::email('{$name}')";
         }
         if ($name === 'password') {

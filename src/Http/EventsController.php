@@ -5,6 +5,7 @@ namespace Spawnflow\Http;
 use Illuminate\Http\Request;
 use Illuminate\Http\StreamedEvent;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Sleep;
 use Spawnflow\Contracts\SubjectRegistry;
 use Spawnflow\Support\SubjectVersion;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -68,7 +69,7 @@ class EventsController extends Controller
                 $polls++;
 
                 if ($interval > 0 && ($maxPolls === null || $polls < (int) $maxPolls)) {
-                    sleep($interval);
+                    Sleep::sleep($interval);
                 }
 
                 if (connection_aborted()) {

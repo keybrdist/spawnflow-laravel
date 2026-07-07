@@ -37,6 +37,8 @@ beforeEach(function (): void {
         owner_id BIGINT UNSIGNED NOT NULL,
         customer_id BIGINT UNSIGNED NOT NULL,
         reference VARCHAR(64) NOT NULL,
+        contact_email VARCHAR(190) NULL,
+        emailSubject VARCHAR(190) NULL,
         notes TEXT NULL,
         state ENUM('pending', 'paid', 'shipped') NOT NULL DEFAULT 'pending',
         is_priority TINYINT(1) NOT NULL DEFAULT 0,
@@ -62,6 +64,8 @@ test('MySQL column types map to the right descriptors', function (): void {
     expect($plan['lines'])
         ->toContain("Field::string('reference')->rules('required')")
         ->toContain("Field::text('notes')->nullable()")
+        ->toContain("Field::email('contact_email')")
+        ->toContain("Field::string('emailSubject')")
         ->toContain("Field::string('state')->rules('in:pending,paid,shipped')")
         ->toContain("Field::bool('is_priority')")
         ->toContain("Field::float('total')->rules('required')")
