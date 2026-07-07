@@ -262,13 +262,13 @@ class SchemaSerializer
     // ---------------------------------------------------------------
 
     /**
-     * Server-computed rule verdicts for every rule-bearing field,
-     * evaluated against the given data completed with field defaults —
-     * so create-time (empty data) resolves against defaults, exactly
-     * what the client's initial form state sees.
+     * Groups plus server-computed rule verdicts, evaluated against the
+     * given data completed with field defaults — so create-time (empty
+     * data) resolves against defaults, exactly what the client's initial
+     * form state sees. Field verdicts are FINAL (own rules AND group).
      *
      * @param  array<string, mixed>  $data
-     * @return array{resolved?: array<string, array{visible: bool, enabled: bool}>}
+     * @return array{groups?: list<array>, resolved?: array<string, array{visible: bool, enabled: bool}>, resolved_groups?: array<string, array{visible: bool, enabled: bool}>}
      */
     protected function resolvedEligibility(string $alias, array $data): array
     {
@@ -277,16 +277,26 @@ class SchemaSerializer
             return [];
         }
 
-        $complete = Eligibility::complete($fieldSet, $data);
+        $out = [];
 
-        $resolved = [];
-        foreach ($fieldSet::all() as $name => $field) {
-            if ($field->getEligibilityRules() !== []) {
-                $resolved[$name] = Eligibility::resolve($field->getEligibilityRules(), $complete);
-            }
+        if ($fieldSet::allGroups() !== []) {
+            $out['groups'] = array_values(array_map(
+                fn (Group $group) => $group->toArray(),
+                $fieldSet::allGroups(),
+            ));
         }
 
-        return $resolved === [] ? [] : ['resolved' => $resolved];
+        $resolved = Eligibility::fieldVerdicts($fieldSet, $data);
+        if ($resolved !== []) {
+            $out['resolved'] = $resolved;
+        }
+
+        $resolvedGroups = Eligibility::groupVerdicts($fieldSet, $data);
+        if ($resolvedGroups !== []) {
+            $out['resolved_groups'] = $resolvedGroups;
+        }
+
+        return $out;
     }
 
     /**
@@ -305,39 +315,92 @@ class SchemaSerializer
             return;
         }
 
-        $declared = array_flip(array_keys($fieldSet::all()));
+        // Materializing groups validates membership (declared fields,
+        // single ownership) as a side effect.
+        $groups = $fieldSet::allGroups();
 
         foreach ($fieldSet::all() as $name => $field) {
-            $references = Eligibility::referencedFields($field);
-            if ($references === []) {
+            $this->assertRuleReferences(
+                $alias,
+                "field '{$name}'",
+                Eligibility::referencedFields($field),
+                $field->isServerResolved(),
+                exposedWhen: fn (FieldContext $case) => in_array(
+                    $name,
+                    array_merge($case->editableFields(), $case->visibleFields()),
+                    true,
+                ),
+                fieldSet: $fieldSet,
+                cases: $cases,
+            );
+        }
+
+        foreach ($groups as $group) {
+            $references = [];
+            foreach ($group->getEligibilityRules() as $rule) {
+                $references = array_merge($references, $rule->references());
+            }
+
+            $this->assertRuleReferences(
+                $alias,
+                "group '{$group->name}'",
+                array_values(array_unique($references)),
+                $group->isServerResolved(),
+                // A group's rule matters to any variant exposing ANY member.
+                exposedWhen: fn (FieldContext $case) => array_intersect(
+                    $group->fields,
+                    array_merge($case->editableFields(), $case->visibleFields()),
+                ) !== [],
+                fieldSet: $fieldSet,
+                cases: $cases,
+            );
+        }
+    }
+
+    /**
+     * @param  list<string>  $references
+     * @param  \Closure(FieldContext): bool  $exposedWhen
+     * @param  class-string<FieldSet>  $fieldSet
+     * @param  list<FieldContext>  $cases
+     */
+    protected function assertRuleReferences(
+        string $alias,
+        string $subject,
+        array $references,
+        bool $serverResolved,
+        \Closure $exposedWhen,
+        string $fieldSet,
+        array $cases,
+    ): void {
+        if ($references === []) {
+            return;
+        }
+
+        $declared = array_flip(array_keys($fieldSet::all()));
+
+        foreach ($references as $reference) {
+            if (! isset($declared[$reference])) {
+                throw new InvalidEligibilityException(
+                    "Eligibility rule on {$subject} of '{$alias}' references undeclared field '{$reference}'.",
+                );
+            }
+        }
+
+        if ($serverResolved) {
+            return;
+        }
+
+        foreach ($cases as $case) {
+            if (! $exposedWhen($case)) {
                 continue;
             }
 
+            $visible = array_flip($case->visibleFields());
             foreach ($references as $reference) {
-                if (! isset($declared[$reference])) {
+                if (! isset($visible[$reference])) {
                     throw new InvalidEligibilityException(
-                        "Eligibility rule on '{$alias}.{$name}' references undeclared field '{$reference}'.",
+                        "Eligibility rule on {$subject} of '{$alias}' references '{$reference}', which variant '{$this->contextValue($case)}' cannot see. Mark it ->serverResolved() or expose '{$reference}' in that variant.",
                     );
-                }
-            }
-
-            if ($field->isServerResolved()) {
-                continue;
-            }
-
-            foreach ($cases as $case) {
-                $exposed = array_merge($case->editableFields(), $case->visibleFields());
-                if (! in_array($name, $exposed, true)) {
-                    continue;
-                }
-
-                $visible = array_flip($case->visibleFields());
-                foreach ($references as $reference) {
-                    if (! isset($visible[$reference])) {
-                        throw new InvalidEligibilityException(
-                            "Eligibility rule on '{$alias}.{$name}' references '{$reference}', which variant '{$this->contextValue($case)}' cannot see. Mark the field ->serverResolved() or expose '{$reference}' in that variant.",
-                        );
-                    }
                 }
             }
         }

@@ -218,6 +218,47 @@ Clients seed initial field state from `resolved` and re-evaluate
 `eligibility` conditions locally as values change; `serverResolved`
 fields have no client-side condition and refresh only by re-fetching.
 
+### Groups
+
+Groups are first-class eligibility nodes: named, ordered sections (or
+wizard steps) carrying the SAME envelope as a leaf field. Declared on the
+FieldSet:
+
+```php
+public static function groups(): array
+{
+    return [
+        Group::make('billing', ['vat_id', 'billing_country'])
+            ->label('Billing')
+            ->visibleWhen(['==' => [['var' => 'type'], 'business']]),
+    ];
+}
+```
+
+Wire shape (all schema shapes, when groups exist):
+
+```json
+"groups": [
+  {
+    "name": "billing",
+    "label": "Billing",
+    "fields": ["vat_id", "billing_country"],
+    "eligibility": [{"effect": "show", "condition": {"==": [{"var": "type"}, "business"]}}]
+  }
+],
+"resolved_groups": { "billing": {"visible": false, "enabled": true} }
+```
+
+- **Composition is AND:** a hidden group hides its members regardless of
+  their own rules; a disabled group disables them. The per-field
+  `resolved` verdicts are FINAL (own rules ∧ group).
+- A field belongs to **at most one group**; membership of an undeclared
+  field, or double membership, throws at declaration time.
+- Ungrouped fields render outside any section, in declaration order.
+- Groups support `->serverResolved()` with the same semantics as fields.
+- Renderers treat `groups` as sections; a wizard is the same contract
+  rendered one group per step.
+
 ### Visibility guard
 
 Serialization **throws** (`InvalidEligibilityException`) when a rule

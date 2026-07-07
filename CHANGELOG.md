@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Write-path enforcement: `Flow::save()` discards rule-ineligible field values (clear-on-ineligible); `Flow::validate()` skips their rules; rules are never cosmetic
   - `resources/conformance/eligibility-fixtures.json` — single cross-runtime conformance suite (Pest now, vitest via `@spawnflow/core`)
   - No cycles by construction: conditions reference values, never other fields' eligibility
+- **Field groups** — `Schema\Group`: first-class eligibility nodes (sections / wizard steps) declared via `FieldSet::groups()`; same rule envelope as fields; AND-composition (hidden group hides members regardless of their own rules); single-membership validated; wire keys `groups` + `resolved_groups`; per-field `resolved` verdicts are final (own ∧ group); guard covers group rules (variant exposing any member must see the references)
 
 ### Changed
 - `SchemaController` responses now follow schema contract v1 (`spawnflow: "1"`, joined descriptors, structured rules per variant); previous ad-hoc response shapes replaced

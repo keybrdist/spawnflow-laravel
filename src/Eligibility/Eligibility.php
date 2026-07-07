@@ -40,8 +40,68 @@ final class Eligibility
     }
 
     /**
-     * Names of the FieldSet's fields whose rules make them ineligible
-     * (hidden or disabled) for the given data state.
+     * Final per-field verdicts for every field governed by rules — its
+     * own or its group's. Group composition is AND: a hidden group hides
+     * its members regardless of their own rules; a disabled group
+     * disables them.
+     *
+     * @param  class-string<FieldSet>  $fieldSet
+     * @param  array<string, mixed>  $data  Partial field values; completed with defaults/null.
+     * @return array<string, array{visible: bool, enabled: bool}>
+     */
+    public static function fieldVerdicts(string $fieldSet, array $data): array
+    {
+        $complete = self::complete($fieldSet, $data);
+        $groups = self::groupVerdicts($fieldSet, $data);
+
+        $verdicts = [];
+        foreach ($fieldSet::all() as $name => $field) {
+            $group = $fieldSet::groupFor($name);
+            $groupState = $group !== null ? ($groups[$group->name] ?? null) : null;
+
+            if ($field->getEligibilityRules() === [] && $groupState === null) {
+                continue;
+            }
+
+            $state = self::resolve($field->getEligibilityRules(), $complete);
+
+            if ($groupState !== null) {
+                $state = [
+                    'visible' => $state['visible'] && $groupState['visible'],
+                    'enabled' => $state['enabled'] && $groupState['enabled'],
+                ];
+            }
+
+            $verdicts[$name] = $state;
+        }
+
+        return $verdicts;
+    }
+
+    /**
+     * Per-group verdicts, for groups that carry rules.
+     *
+     * @param  class-string<FieldSet>  $fieldSet
+     * @param  array<string, mixed>  $data
+     * @return array<string, array{visible: bool, enabled: bool}>
+     */
+    public static function groupVerdicts(string $fieldSet, array $data): array
+    {
+        $complete = self::complete($fieldSet, $data);
+
+        $verdicts = [];
+        foreach ($fieldSet::allGroups() as $name => $group) {
+            if ($group->getEligibilityRules() !== []) {
+                $verdicts[$name] = self::resolve($group->getEligibilityRules(), $complete);
+            }
+        }
+
+        return $verdicts;
+    }
+
+    /**
+     * Names of the FieldSet's fields whose rules — own or group — make
+     * them ineligible (hidden or disabled) for the given data state.
      *
      * @param  class-string<FieldSet>  $fieldSet
      * @param  array<string, mixed>  $data  Partial field values; completed with defaults/null.
@@ -49,16 +109,8 @@ final class Eligibility
      */
     public static function ineligible(string $fieldSet, array $data): array
     {
-        $complete = self::complete($fieldSet, $data);
-
         $ineligible = [];
-        foreach ($fieldSet::all() as $name => $field) {
-            $rules = $field->getEligibilityRules();
-            if ($rules === []) {
-                continue;
-            }
-
-            $state = self::resolve($rules, $complete);
+        foreach (self::fieldVerdicts($fieldSet, $data) as $name => $state) {
             if (! $state['visible'] || ! $state['enabled']) {
                 $ineligible[] = $name;
             }
