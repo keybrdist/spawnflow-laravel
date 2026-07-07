@@ -4,6 +4,7 @@ namespace Spawnflow\Schema;
 
 use BackedEnum;
 use Illuminate\Support\Str;
+use Spawnflow\Eligibility\Rule;
 
 /**
  * A type-aware field descriptor.
@@ -46,6 +47,11 @@ final class Field
     private bool $multiple = false;
 
     private bool $scoped = true;
+
+    /** @var list<Rule> */
+    private array $eligibility = [];
+
+    private bool $serverResolved = false;
 
     private function __construct(
         public readonly string $name,
@@ -262,6 +268,79 @@ final class Field
     }
 
     // ---------------------------------------------------------------
+    // Eligibility — intra-form data dynamics
+    // ---------------------------------------------------------------
+    //
+    // Rules answer "given the form's current VALUES, is this field
+    // visible/enabled?" — the reactive axis. WHO may touch a field in
+    // WHAT record state stays in the FieldContext enum (the variant
+    // axis); a field is effectively eligible only when the variant
+    // grants it AND its rules pass. Conditions are restricted JSON
+    // Logic (see Eligibility\Condition) referencing sibling field
+    // values by name.
+
+    /**
+     * Visible only while the condition passes.
+     *
+     * @param  array<string, mixed>|bool  $condition
+     */
+    public function visibleWhen(array|bool $condition): self
+    {
+        $this->eligibility[] = Rule::show($condition);
+
+        return $this;
+    }
+
+    /**
+     * Hidden while the condition passes.
+     *
+     * @param  array<string, mixed>|bool  $condition
+     */
+    public function hiddenWhen(array|bool $condition): self
+    {
+        $this->eligibility[] = Rule::hide($condition);
+
+        return $this;
+    }
+
+    /**
+     * Editable only while the condition passes (rendered but disabled
+     * otherwise).
+     *
+     * @param  array<string, mixed>|bool  $condition
+     */
+    public function enabledWhen(array|bool $condition): self
+    {
+        $this->eligibility[] = Rule::enable($condition);
+
+        return $this;
+    }
+
+    /**
+     * Disabled while the condition passes.
+     *
+     * @param  array<string, mixed>|bool  $condition
+     */
+    public function disabledWhen(array|bool $condition): self
+    {
+        $this->eligibility[] = Rule::disable($condition);
+
+        return $this;
+    }
+
+    /**
+     * Ship only the server-computed eligibility verdict — no condition
+     * on the wire, no client re-evaluation. The escape hatch for rules
+     * that reference fields the viewer cannot see.
+     */
+    public function serverResolved(bool $serverResolved = true): self
+    {
+        $this->serverResolved = $serverResolved;
+
+        return $this;
+    }
+
+    // ---------------------------------------------------------------
     // Accessors
     // ---------------------------------------------------------------
 
@@ -331,6 +410,17 @@ final class Field
     public function isScoped(): bool
     {
         return $this->scoped;
+    }
+
+    /** @return list<Rule> */
+    public function getEligibilityRules(): array
+    {
+        return $this->eligibility;
+    }
+
+    public function isServerResolved(): bool
+    {
+        return $this->serverResolved;
     }
 
     /**

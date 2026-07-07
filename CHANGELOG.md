@@ -37,6 +37,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **`make:spawnflow-context` command** — scaffolds a `FieldContext` enum from the published stub into `App\Spawnflow`; `--force` overwrites. Consumes the previously-orphaned `stubs/context-enum.stub`.
 
+- **Eligibility rules** — the reactive axis of the contract (context variants stay the who×record-state axis):
+  - `Field::visibleWhen()/hiddenWhen()/enabledWhen()/disabledWhen()` — per-field `{effect, condition}` rules over sibling field VALUES; `->serverResolved()` ships the verdict only (no client re-eval)
+  - `Eligibility\Condition` — restricted JSON Logic evaluator: fixed op allowlist (`==` strict, `!=`, `>`, `<`, `>=`, `<=`, `and`, `or`, `!`, `in`, `var`, `missing`), explicit cross-runtime truthiness (`"0"` truthy), errors fail CLOSED regardless of effect polarity
+  - Contract keys (additive): `eligibility` envelopes per field, `serverResolved`, top-level `resolved` verdicts — record values on the resolved shape, field defaults on variants/default shapes (create baseline)
+  - Declaration-time guard: serialization throws `InvalidEligibilityException` when a rule references an undeclared field or one a exposing variant cannot see
+  - Write-path enforcement: `Flow::save()` discards rule-ineligible field values (clear-on-ineligible); `Flow::validate()` skips their rules; rules are never cosmetic
+  - `resources/conformance/eligibility-fixtures.json` — single cross-runtime conformance suite (Pest now, vitest via `@spawnflow/core`)
+  - No cycles by construction: conditions reference values, never other fields' eligibility
+
 ### Changed
 - `SchemaController` responses now follow schema contract v1 (`spawnflow: "1"`, joined descriptors, structured rules per variant); previous ad-hoc response shapes replaced
 - Resolved schema endpoint (`/schema/{subject}/{id}`) no longer requires ownership: resolution is read-only, any authenticated user gets their variant (viewer cases now reachable); missing record → 404

@@ -5,6 +5,8 @@ namespace Spawnflow\Schema;
 use Illuminate\Support\Str;
 use Spawnflow\Contracts\FieldContext;
 use Spawnflow\Contracts\SubjectRegistry;
+use Spawnflow\Eligibility\Eligibility;
+use Spawnflow\Exceptions\InvalidEligibilityException;
 
 /**
  * The single serializer behind the schema contract (v1).
@@ -25,10 +27,16 @@ class SchemaSerializer
 
     /**
      * The resolved-variant schema for a specific record:
-     * one context case, per-field editable/visible flags and effective rules.
+     * one context case, per-field editable/visible flags and effective
+     * rules, plus rule-eligibility verdicts evaluated against the
+     * record's data.
+     *
+     * @param  array<string, mixed>  $data  The record's current values (defaults on create).
      */
-    public function resolved(string $alias, FieldContext $context): array
+    public function resolved(string $alias, FieldContext $context, array $data = []): array
     {
+        $this->assertEligibilityConsistent($alias, [$context]);
+
         $editable = array_flip($context->editableFields());
         $visible = array_flip($context->visibleFields());
         $overrides = $context->validation();
@@ -62,7 +70,7 @@ class SchemaSerializer
             'resource' => $alias,
             'context' => $this->contextValue($context),
             'fields' => $fields,
-        ];
+        ] + $this->resolvedEligibility($alias, $data);
     }
 
     /**
@@ -75,6 +83,8 @@ class SchemaSerializer
     public function variants(string $alias, string $contextClass): array
     {
         $cases = $contextClass::cases();
+
+        $this->assertEligibilityConsistent($alias, $cases);
 
         $variants = [];
         foreach ($cases as $case) {
@@ -101,7 +111,7 @@ class SchemaSerializer
             'resource' => $alias,
             'fields' => $this->describeFields($alias, $cases),
             'variants' => $variants,
-        ];
+        ] + $this->resolvedEligibility($alias, []);
     }
 
     /**
@@ -110,6 +120,8 @@ class SchemaSerializer
      */
     public function defaultSchema(string $alias): array
     {
+        $this->assertEligibilityConsistent($alias, []);
+
         $fieldSet = $this->registry->fieldsFor($alias);
 
         $fields = [];
@@ -127,7 +139,7 @@ class SchemaSerializer
             'resource' => $alias,
             'context' => 'default',
             'fields' => $fields,
-        ];
+        ] + $this->resolvedEligibility($alias, []);
     }
 
     // ---------------------------------------------------------------
@@ -161,6 +173,20 @@ class SchemaSerializer
 
         if ($field->isWriteOnly()) {
             $descriptor['writeOnly'] = true;
+        }
+
+        if ($field->getEligibilityRules() !== []) {
+            if ($field->isServerResolved()) {
+                // The condition stays server-side; clients get only the
+                // computed verdict (the `resolved` key) and re-fetch to
+                // refresh it.
+                $descriptor['serverResolved'] = true;
+            } else {
+                $descriptor['eligibility'] = array_map(
+                    fn ($rule) => $rule->toArray(),
+                    $field->getEligibilityRules(),
+                );
+            }
         }
 
         if ($field->type === FieldType::Enum) {
@@ -229,6 +255,92 @@ class SchemaSerializer
         }
 
         return true;
+    }
+
+    // ---------------------------------------------------------------
+    // Eligibility
+    // ---------------------------------------------------------------
+
+    /**
+     * Server-computed rule verdicts for every rule-bearing field,
+     * evaluated against the given data completed with field defaults —
+     * so create-time (empty data) resolves against defaults, exactly
+     * what the client's initial form state sees.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array{resolved?: array<string, array{visible: bool, enabled: bool}>}
+     */
+    protected function resolvedEligibility(string $alias, array $data): array
+    {
+        $fieldSet = $this->registry->fieldsFor($alias);
+        if ($fieldSet === null) {
+            return [];
+        }
+
+        $complete = Eligibility::complete($fieldSet, $data);
+
+        $resolved = [];
+        foreach ($fieldSet::all() as $name => $field) {
+            if ($field->getEligibilityRules() !== []) {
+                $resolved[$name] = Eligibility::resolve($field->getEligibilityRules(), $complete);
+            }
+        }
+
+        return $resolved === [] ? [] : ['resolved' => $resolved];
+    }
+
+    /**
+     * The declaration-time guard: every rule must reference declared
+     * fields, and — for client-evaluated rules — fields the referencing
+     * field's variant can SEE, or the client would re-evaluate against
+     * values it never receives. Mark the field ->serverResolved() to
+     * opt out of client re-evaluation instead.
+     *
+     * @param  list<FieldContext>  $cases
+     */
+    protected function assertEligibilityConsistent(string $alias, array $cases): void
+    {
+        $fieldSet = $this->registry->fieldsFor($alias);
+        if ($fieldSet === null) {
+            return;
+        }
+
+        $declared = array_flip(array_keys($fieldSet::all()));
+
+        foreach ($fieldSet::all() as $name => $field) {
+            $references = Eligibility::referencedFields($field);
+            if ($references === []) {
+                continue;
+            }
+
+            foreach ($references as $reference) {
+                if (! isset($declared[$reference])) {
+                    throw new InvalidEligibilityException(
+                        "Eligibility rule on '{$alias}.{$name}' references undeclared field '{$reference}'.",
+                    );
+                }
+            }
+
+            if ($field->isServerResolved()) {
+                continue;
+            }
+
+            foreach ($cases as $case) {
+                $exposed = array_merge($case->editableFields(), $case->visibleFields());
+                if (! in_array($name, $exposed, true)) {
+                    continue;
+                }
+
+                $visible = array_flip($case->visibleFields());
+                foreach ($references as $reference) {
+                    if (! isset($visible[$reference])) {
+                        throw new InvalidEligibilityException(
+                            "Eligibility rule on '{$alias}.{$name}' references '{$reference}', which variant '{$this->contextValue($case)}' cannot see. Mark the field ->serverResolved() or expose '{$reference}' in that variant.",
+                        );
+                    }
+                }
+            }
+        }
     }
 
     // ---------------------------------------------------------------

@@ -1,0 +1,59 @@
+{
+  "$comment": "Cross-runtime conformance cases for the restricted eligibility condition evaluator. Consumed by tests/Eligibility/ConditionTest.php (Pest) and @spawnflow/core (vitest). expect is true, false, or 'error' (evaluation must fail). NEVER copy this file — both runtimes read this one.",
+  "version": 1,
+  "cases": [
+    { "name": "literal true", "condition": true, "data": {}, "expect": true },
+    { "name": "literal false", "condition": false, "data": {}, "expect": false },
+
+    { "name": "eq matches", "condition": { "==": [{ "var": "a" }, "x"] }, "data": { "a": "x" }, "expect": true },
+    { "name": "eq is strict across types", "condition": { "==": [{ "var": "a" }, 1] }, "data": { "a": "1" }, "expect": false },
+    { "name": "eq bool vs int is strict", "condition": { "==": [{ "var": "a" }, true] }, "data": { "a": 1 }, "expect": false },
+    { "name": "eq null against present null", "condition": { "==": [{ "var": "a" }, null] }, "data": { "a": null }, "expect": true },
+    { "name": "neq", "condition": { "!=": [{ "var": "a" }, "x"] }, "data": { "a": "y" }, "expect": true },
+    { "name": "eq wrong operand count errors", "condition": { "==": [1] }, "data": {}, "expect": "error" },
+
+    { "name": "gt", "condition": { ">": [{ "var": "n" }, 5] }, "data": { "n": 6 }, "expect": true },
+    { "name": "gt equal is false", "condition": { ">": [{ "var": "n" }, 5] }, "data": { "n": 5 }, "expect": false },
+    { "name": "gte equal", "condition": { ">=": [{ "var": "n" }, 5] }, "data": { "n": 5 }, "expect": true },
+    { "name": "lt float", "condition": { "<": [{ "var": "n" }, 1.5] }, "data": { "n": 1.2 }, "expect": true },
+    { "name": "lte", "condition": { "<=": [{ "var": "n" }, 3] }, "data": { "n": 3 }, "expect": true },
+    { "name": "numeric comparison rejects numeric strings", "condition": { ">": [{ "var": "n" }, 5] }, "data": { "n": "6" }, "expect": "error" },
+    { "name": "numeric comparison rejects null", "condition": { "<": [{ "var": "n" }, 5] }, "data": { "n": null }, "expect": "error" },
+
+    { "name": "and all true", "condition": { "and": [{ "==": [{ "var": "a" }, 1] }, { "==": [{ "var": "b" }, 2] }] }, "data": { "a": 1, "b": 2 }, "expect": true },
+    { "name": "and one false", "condition": { "and": [{ "==": [{ "var": "a" }, 1] }, { "==": [{ "var": "b" }, 2] }] }, "data": { "a": 1, "b": 3 }, "expect": false },
+    { "name": "or one true", "condition": { "or": [{ "==": [{ "var": "a" }, 9] }, { "==": [{ "var": "b" }, 2] }] }, "data": { "a": 1, "b": 2 }, "expect": true },
+    { "name": "or none true", "condition": { "or": [{ "==": [{ "var": "a" }, 9] }, { "==": [{ "var": "b" }, 9] }] }, "data": { "a": 1, "b": 2 }, "expect": false },
+    { "name": "and empty list errors", "condition": { "and": [] }, "data": {}, "expect": "error" },
+    { "name": "not of false comparison", "condition": { "!": { "==": [{ "var": "a" }, 1] } }, "data": { "a": 2 }, "expect": true },
+    { "name": "not with list-wrapped argument", "condition": { "!": [{ "var": "b" }] }, "data": { "b": false }, "expect": true },
+
+    { "name": "truthiness: string zero is truthy", "condition": { "!": { "var": "s" } }, "data": { "s": "0" }, "expect": false },
+    { "name": "truthiness: empty string is falsy", "condition": { "!": { "var": "s" } }, "data": { "s": "" }, "expect": true },
+    { "name": "truthiness: zero is falsy", "condition": { "!": { "var": "n" } }, "data": { "n": 0 }, "expect": true },
+    { "name": "truthiness: null is falsy", "condition": { "!": { "var": "v" } }, "data": { "v": null }, "expect": true },
+    { "name": "truthiness: empty array is falsy", "condition": { "!": { "var": "v" } }, "data": { "v": [] }, "expect": true },
+    { "name": "truthiness: non-empty array is truthy", "condition": { "var": "v" }, "data": { "v": [1] }, "expect": true },
+
+    { "name": "in array", "condition": { "in": [{ "var": "c" }, ["a", "b"]] }, "data": { "c": "a" }, "expect": true },
+    { "name": "in array is strict", "condition": { "in": [{ "var": "n" }, [1, 2]] }, "data": { "n": "1" }, "expect": false },
+    { "name": "in substring", "condition": { "in": ["ell", { "var": "s" }] }, "data": { "s": "hello" }, "expect": true },
+    { "name": "in substring absent", "condition": { "in": ["xyz", { "var": "s" }] }, "data": { "s": "hello" }, "expect": false },
+    { "name": "in invalid haystack errors", "condition": { "in": [{ "var": "n" }, 5] }, "data": { "n": 1 }, "expect": "error" },
+
+    { "name": "var dot path", "condition": { "==": [{ "var": "a.b" }, 1] }, "data": { "a": { "b": 1 } }, "expect": true },
+    { "name": "var absent without default errors", "condition": { "==": [{ "var": "gone" }, 1] }, "data": {}, "expect": "error" },
+    { "name": "var absent with default", "condition": { "==": [{ "var": ["gone", "dflt"] }, "dflt"] }, "data": {}, "expect": true },
+    { "name": "var present null does not error", "condition": { "==": [{ "var": "a" }, null] }, "data": { "a": null }, "expect": true },
+
+    { "name": "missing reports absent fields", "condition": { "missing": ["a", "b"] }, "data": { "a": 1 }, "expect": true },
+    { "name": "missing none absent", "condition": { "missing": ["a"] }, "data": { "a": 1 }, "expect": false },
+    { "name": "missing treats present null as present", "condition": { "missing": ["a"] }, "data": { "a": null }, "expect": false },
+
+    { "name": "unknown operator errors", "condition": { "between": [1, 2, 3] }, "data": {}, "expect": "error" },
+    { "name": "multi-key node errors", "condition": { "==": [1, 1], "!=": [1, 2] }, "data": {}, "expect": "error" },
+
+    { "name": "nested and of eq and gt", "condition": { "and": [{ "==": [{ "var": "type" }, "business"] }, { ">": [{ "var": "seats" }, 10] }] }, "data": { "type": "business", "seats": 11 }, "expect": true },
+    { "name": "nested or with not", "condition": { "or": [{ "!": { "var": "active" } }, { "==": [{ "var": "plan" }, "free"] }] }, "data": { "active": true, "plan": "free" }, "expect": true }
+  ]
+}

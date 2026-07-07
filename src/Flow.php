@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Spawnflow\Contracts\FieldContext;
 use Spawnflow\Contracts\SubjectRegistry;
+use Spawnflow\Eligibility\Eligibility;
 use Spawnflow\Exceptions\ForbiddenFieldAccessException;
 use Spawnflow\Exceptions\OwnershipException;
 use Spawnflow\Exceptions\UnauthenticatedException;
@@ -188,11 +189,21 @@ class Flow
      */
     public function validate(?array $rules = null, ?array $data = null): static
     {
+        $explicit = $rules !== null;
+
         $rules ??= $this->subjectAlias !== null
             ? (new RuleResolver($this->registry))->for($this->subjectAlias, $this->context)
             : ($this->context?->validation() ?? []);
 
         $data ??= $this->request->all();
+
+        // Rule-ineligible fields (hidden or disabled by eligibility rules
+        // for the submitted state) are never validated — their values are
+        // discarded by save(), so failing them would reject discards.
+        // Explicit rules are the caller's full override and stay untouched.
+        if (! $explicit) {
+            $rules = array_diff_key($rules, array_flip($this->ruleIneligibleFields($data)));
+        }
 
         if ($this->request->headers->has('Precognition')) {
             $this->validatePrecognitive($rules, $data);
@@ -256,6 +267,12 @@ class Flow
             $data = array_intersect_key($data, array_flip($allowed));
         }
 
+        // Discard values for fields whose eligibility rules make them
+        // hidden or disabled in the submitted state — the contract's
+        // clear-on-ineligible semantics. Rules are enforced, never
+        // cosmetic: a crafted payload cannot write through a rule.
+        $data = array_diff_key($data, array_flip($this->ruleIneligibleFields($data)));
+
         if ($this->instance) {
             // Update existing record
             $this->instance->fill($data);
@@ -284,6 +301,29 @@ class Flow
         $this->subject->newQuery()->whereIn('id', $ids)->delete();
 
         return response()->json(null, 200);
+    }
+
+    /**
+     * Fields made ineligible by their eligibility rules for the intended
+     * post-write state: the loaded record's values (or field defaults on
+     * create) overlaid with the submitted data.
+     *
+     * @param  array<string, mixed>  $data
+     * @return list<string>
+     */
+    protected function ruleIneligibleFields(array $data): array
+    {
+        $fieldSet = $this->subjectAlias !== null
+            ? $this->registry->fieldsFor($this->subjectAlias)
+            : null;
+
+        if ($fieldSet === null) {
+            return [];
+        }
+
+        $current = $this->instance?->attributesToArray() ?? [];
+
+        return Eligibility::ineligible($fieldSet, array_merge($current, $data));
     }
 
     // ---------------------------------------------------------------

@@ -62,7 +62,7 @@ class SchemaController extends Controller
                 return response()->json(['error' => "Record not found: {$alias}/{$id}"], 404);
             }
 
-            return response()->json($serializer->resolved($alias, $context));
+            return response()->json($serializer->resolved($alias, $context, $record->attributesToArray()));
         }
 
         return response()->json($serializer->variants($alias, $contextClass));

@@ -87,6 +87,8 @@ The per-field identity object. Keys are omitted when at their default.
 | `writeOnly` | bool | Accepted on write, never in responses (passwords). Present only when true. |
 | `options` | array | Enum fields only. `{value, label}` pairs; labels come from a `label()` method on the enum when defined, else humanized case names. Respects `only()` restrictions. |
 | `relation` | object | Relation fields only. `subject` is the registered alias of the related model (null if unregistered). `options_url` is present when the schema routes are enabled — the options endpoint for this field. |
+| `eligibility` | array | Rule-bearing fields only. `{effect, condition}` envelopes — see [Eligibility](#eligibility-rules). Absent when the field is `serverResolved`. |
+| `serverResolved` | bool | Rule-bearing fields whose condition stays server-side. Clients get only the computed verdict (top-level `resolved`) and re-fetch to refresh it. Present only when true. |
 
 ---
 
@@ -125,6 +127,119 @@ parser:
 | `enum` | `in` with the option values |
 | `relation` | `exists` (serverOnly) |
 | `nullable()` | `nullable` (unless `required` present) |
+
+---
+
+## Eligibility rules
+
+The reactive axis of the contract, orthogonal to context variants:
+
+- **Context variants** answer *who* may touch a field in *what record
+  state* — resolved server-side, coarse-grained, the authorization layer.
+- **Eligibility rules** answer *given the form's current values, is this
+  field visible/enabled?* — declared per field, shipped to the client,
+  re-evaluated live as sibling fields change.
+
+A field is effectively eligible only when its variant grants it AND its
+rules pass. Rules may not reference roles — role concerns belong to the
+variant axis by design.
+
+### Envelope
+
+```json
+"body": {
+  "type": "text", "widget": "textarea", "label": "Body",
+  "eligibility": [
+    {"effect": "enable", "condition": {"==": [{"var": "status"}, "draft"]}}
+  ]
+}
+```
+
+| Effect | Meaning |
+|---|---|
+| `show` | Visible iff the condition passes |
+| `hide` | Hidden iff the condition passes |
+| `enable` | Editable iff the condition passes (rendered but disabled otherwise) |
+| `disable` | Disabled iff the condition passes |
+
+Multiple envelopes AND together per axis. A field with no rule on an axis
+defaults to eligible on that axis.
+
+Declared in the FieldSet: `->visibleWhen($condition)`, `->hiddenWhen()`,
+`->enabledWhen()`, `->disabledWhen()`, plus `->serverResolved()`.
+
+### Conditions — restricted JSON Logic
+
+Conditions are a fixed-allowlist subset of JSON Logic, evaluated
+identically by `Spawnflow\Eligibility\Condition` (PHP) and
+`@spawnflow/core` (JS); the shared behavior is pinned by
+`resources/conformance/eligibility-fixtures.json`, which both test suites
+run.
+
+| Operator | Notes |
+|---|---|
+| `var` | `{"var": "name"}` or `{"var": ["name", default]}`. Dot paths supported. Absent key without a default is an **error** (fail-closed) — but evaluation data always contains every declared field (null when unset), so this only bites undeclared references, which serialization rejects. |
+| `missing` | `{"missing": ["a", "b"]}` → array of absent names (truthy when any missing). The only operator that never errors on absence. |
+| `==` / `!=` | **Strict** (`===` semantics). `"1" == 1` is false. |
+| `>` `<` `>=` `<=` | Numbers only; numeric strings are an error. |
+| `and` / `or` | Non-empty list of conditions. |
+| `!` | Negation. |
+| `in` | Needle in array (strict), or substring when both are strings. |
+
+Truthiness is explicit and identical in both runtimes: `null`/`false`
+falsy; numbers falsy at zero; strings falsy when empty (**`"0"` is
+truthy**); arrays falsy when empty.
+
+**Fail-closed:** any evaluation error (unknown operator, malformed node,
+bad reference) produces the restrictive outcome — hidden/disabled —
+regardless of the effect's polarity.
+
+**No cycles by construction:** conditions reference field *values*, never
+other fields' eligibility, so circular visibility is impossible.
+
+### Resolved verdicts
+
+Every schema shape carries a top-level `resolved` key with the
+server-computed verdict per rule-bearing field:
+
+```json
+"resolved": {
+  "body": {"visible": true, "enabled": false}
+}
+```
+
+- **Resolved schema** — evaluated against the record's current values.
+- **Variants / default schema** (create) — evaluated against field
+  defaults, exactly what the client's initial form state sees.
+- Evaluation data is the full declared field map — absent fields present
+  as their default, else null — so both runtimes evaluate the same shape.
+
+Clients seed initial field state from `resolved` and re-evaluate
+`eligibility` conditions locally as values change; `serverResolved`
+fields have no client-side condition and refresh only by re-fetching.
+
+### Visibility guard
+
+Serialization **throws** (`InvalidEligibilityException`) when a rule
+references an undeclared field, or a field that some variant exposing the
+rule-bearing field cannot see — the client could never re-evaluate the
+condition. Mark the field `->serverResolved()` to opt out of client
+re-evaluation instead.
+
+### Write-path enforcement (clear-on-ineligible)
+
+Rules are enforced, never cosmetic. For the intended post-write state
+(record values or defaults, overlaid with the submitted data):
+
+- **`Flow::save()`** discards values for rule-ineligible fields — a
+  crafted payload cannot write through a rule.
+- **`Flow::validate()`** skips ineligible fields' validation rules (their
+  values are discarded, so failing them would reject discards). Explicit
+  rules passed to `validate()` are the caller's override and stay
+  untouched.
+
+Discard-on-write is the contract's answer to "the field became ineligible
+while it still held a value": the stale value is dropped, not persisted.
 
 ---
 
