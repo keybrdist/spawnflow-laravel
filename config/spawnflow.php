@@ -60,6 +60,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | SSE Invalidation Channel (opt-in)
+    |--------------------------------------------------------------------------
+    |
+    | GET /spawnflow/events streams `change` signals when subjects are
+    | written through the Flow chain — invalidation only, never state:
+    | clients refetch via the endpoints they already use, so a dropped
+    | stream degrades to non-live, never to wrong data. Registered with
+    | the schema routes, behind the same middleware. Each open stream
+    | holds a PHP worker; set events_max_polls to recycle idle streams
+    | (EventSource reconnects automatically).
+    |
+    */
+    'events' => false,
+    'events_poll_interval' => 2, // seconds between version checks
+    'events_max_polls' => null, // null = stream until the client disconnects
+    'events_cache_store' => null, // null = default cache store
+
+    /*
+    |--------------------------------------------------------------------------
     | Ownership
     |--------------------------------------------------------------------------
     |

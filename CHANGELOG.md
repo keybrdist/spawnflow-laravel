@@ -61,6 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Livewire renderer** — `<livewire:spawnflow-form subject="posts" :record-id="$id" />`: ONE generic schema-interpreting component (Filament's proven model, no per-form classes), auto-registered when Livewire is present (`suggest`ed, not required); six widgets (input/textarea/number/checkbox/select/date); eligibility re-evaluated server-side per update; saves flow through the same `Flow` chain as HTTP (ownership, variant strip, rule enforcement); views publishable via `spawnflow-views`
 
+- **SSE invalidation channel (opt-in)** — `GET /spawnflow/events` (`spawnflow.events` flag, same middleware as schema routes): Flow writes bump per-subject versions (`Support\SubjectVersion`) and dispatch typed `Events\SubjectChanged`; the stream (`response()->eventStream()`) pushes `change` signals, `since[subject]=n` replays missed changes; signals only — clients refetch via existing endpoints, dropped stream degrades to non-live, never wrong data; `subscribeToChanges()` helper in `@spawnflow/core`
+
 ### Changed
 - `SchemaController` responses now follow schema contract v1 (`spawnflow: "1"`, joined descriptors, structured rules per variant); previous ad-hoc response shapes replaced
 - Resolved schema endpoint (`/schema/{subject}/{id}`) no longer requires ownership: resolution is read-only, any authenticated user gets their variant (viewer cases now reachable); missing record → 404

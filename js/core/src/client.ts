@@ -53,3 +53,26 @@ export function createHttpClient(options: HttpClientOptions = {}): SpawnClient {
     },
   };
 }
+
+export type SubjectChange = { subject: string; version: number };
+
+/**
+ * Subscribe to the opt-in SSE invalidation channel
+ * (GET /spawnflow/events). Signals only — refetch through the client on
+ * change. EventSource auto-reconnects; a dropped stream degrades to
+ * non-live, never to wrong data. Returns an unsubscribe function.
+ */
+export function subscribeToChanges(
+  onChange: (change: SubjectChange) => void,
+  options: { baseUrl?: string; subjects?: string[] } = {},
+): () => void {
+  const baseUrl = (options.baseUrl ?? '').replace(/\/$/, '');
+  const query = options.subjects?.length ? `?subjects=${options.subjects.join(',')}` : '';
+
+  const source = new EventSource(`${baseUrl}/spawnflow/events${query}`);
+  source.addEventListener('change', (event) => {
+    onChange(JSON.parse((event as MessageEvent).data) as SubjectChange);
+  });
+
+  return () => source.close();
+}

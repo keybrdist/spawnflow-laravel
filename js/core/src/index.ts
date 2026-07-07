@@ -1,5 +1,5 @@
 export * from './contract';
-export { createHttpClient, type HttpClientOptions } from './client';
+export { createHttpClient, subscribeToChanges, type HttpClientOptions, type SubjectChange } from './client';
 export { compileField, compileForm, serverOnlyFields } from './rules';
 export {
   completeData,

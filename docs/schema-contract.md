@@ -395,6 +395,36 @@ schema routes, behind the same middleware; requires authentication.
 
 ---
 
+## SSE invalidation channel (opt-in)
+
+`GET /spawnflow/events?subjects=posts,comments&since[posts]=3` — enabled
+by `spawnflow.events`, registered with the schema routes behind the same
+middleware.
+
+```
+event: change
+data: {"subject":"posts","version":4}
+```
+
+- **Signals only, never state.** Writes through the Flow chain bump a
+  per-subject version (and dispatch the typed
+  `Spawnflow\Events\SubjectChanged` — the hook for Reverb broadcasting
+  or cache busting). Clients react by refetching through the endpoints
+  they already use; a dropped stream degrades to non-live, never to
+  wrong data.
+- `since[{subject}]={version}` replays changes missed while
+  disconnected.
+- Client helper: `subscribeToChanges(onChange, { baseUrl, subjects })`
+  in `@spawnflow/core` (EventSource, auto-reconnect, returns
+  unsubscribe).
+- Each open stream holds a PHP worker (SSE-on-FPM economics): size
+  worker pools accordingly or set `events_max_polls` to recycle idle
+  streams. Out-of-band writes (raw queries, other code paths) don't
+  bump versions — dispatch `SubjectChanged` / call
+  `SubjectVersion::bump()` yourself where that matters.
+
+---
+
 ## Server-side enforcement (validation authority)
 
 What the contract tells the frontend is exactly what the server enforces.

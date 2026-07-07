@@ -286,6 +286,8 @@ class Flow
             $this->instance->save();
         }
 
+        $this->announceChange('saved', $this->instance->getKey());
+
         return $this;
     }
 
@@ -300,7 +302,24 @@ class Flow
 
         $this->subject->newQuery()->whereIn('id', $ids)->delete();
 
+        $this->announceChange('deleted');
+
         return response()->json(null, 200);
+    }
+
+    /**
+     * Announce a write: bump the subject's invalidation version (the SSE
+     * channel diffs these) and dispatch the typed event for everything
+     * else (Reverb broadcasting, cache busting, audit).
+     */
+    protected function announceChange(string $action, int|string|null $id = null): void
+    {
+        if ($this->subjectAlias === null) {
+            return;
+        }
+
+        \Spawnflow\Support\SubjectVersion::bump($this->subjectAlias);
+        event(new \Spawnflow\Events\SubjectChanged($this->subjectAlias, $id, $action));
     }
 
     /**

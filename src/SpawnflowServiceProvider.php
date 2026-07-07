@@ -66,6 +66,10 @@ class SpawnflowServiceProvider extends ServiceProvider
                 Route::get('/schema/{subject}/{id?}', [SchemaController::class, 'show'])
                     ->whereNumber('id');
                 Route::get('/options/{subject}/{field}', [\Spawnflow\Http\OptionsController::class, 'show']);
+
+                if (config('spawnflow.events', false)) {
+                    Route::get('/events', [\Spawnflow\Http\EventsController::class, 'show']);
+                }
             });
     }
 }
