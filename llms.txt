@@ -1,0 +1,24 @@
+# Spawnflow
+
+> Laravel package that collapses the API request lifecycle into one fluent chain and serves your data WITH its form attached: field types, validation rules, and who-can-touch-what, resolved per role and record state. One declaration per resource; TypeScript + Zod clients generated from the same contract the live endpoint serves.
+
+Key facts for code generation:
+
+- The chain: `(new Flow)->spawn($request)->auth()->resolve('posts')->ask('POST', $id)->fields()->validate()->save($request->all())->present()`
+- One resource = one FieldSet (field descriptors) + one FieldContext enum (role × record-state permissions). Scaffold both from a real table: `php artisan spawnflow:resource Post --generate` — the generated FieldSet self-registers via `#[SpawnSubject]`.
+- Two orthogonal permission axes: the context enum answers WHO may touch a field in WHAT record state (server-resolved variants); eligibility rules answer "given the form's current VALUES, is this field visible/enabled" (`->visibleWhen(...)/enabledWhen(...)` with restricted JSON Logic conditions, evaluated identically in PHP and JS, fail-closed). Never put role checks in rules.
+- Groups (`FieldSet::groups()`, `Group::make('billing', [...])->visibleWhen(...)`) are rule-bearing sections; hidden group hides members (AND composition).
+- The schema contract (docs/schema-contract.md) is the single source of truth: `GET /spawnflow/schema/{subject}/{id?}` serves it; `php artisan spawnflow:generate` emits TypeScript types + Zod schemas from the same serializer — no drift possible.
+- Write path enforces everything: variant-ineligible and rule-ineligible fields are discarded on save, never trusted from the client.
+
+## Docs
+
+- [README](README.md): install, chain API, context enums, escape hatches
+- [Schema contract](docs/schema-contract.md): the wire format — descriptors, structured rules, eligibility envelopes, resolved verdicts, groups
+- [CHANGELOG](CHANGELOG.md): feature history
+
+## Frontend
+
+- `@spawnflow/core` (js/core): contract types, cross-runtime eligibility evaluator, rule→Zod compiler, HTTP client — framework-agnostic
+- `@spawnflow/react-shadcn` (js/react-shadcn): `<SpawnForm>` renderer; also distributed as a shadcn registry item (`npx shadcn add <registry-url>/r/spawn-form.json`) so the presentational source lives in YOUR repo, editable
+- Conformance: resources/conformance/eligibility-fixtures.json pins PHP↔JS evaluator parity — change semantics there first, never in one runtime

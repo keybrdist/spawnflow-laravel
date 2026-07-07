@@ -1,0 +1,32 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry.json",
+  "name": "spawnflow",
+  "homepage": "https://github.com/spawnflow/spawnflow-laravel",
+  "items": [
+    {
+      "name": "spawn-form",
+      "type": "registry:component",
+      "title": "SpawnForm",
+      "description": "Schema-driven, permission-aware form for Spawnflow backends: widgets from field descriptors, Zod validation from structured rules, live eligibility (show/hide/enable/disable) from the contract's rule envelopes, groups as sections. You own this source — edit freely; the contract and evaluator stay in @spawnflow/core.",
+      "dependencies": [
+        "@spawnflow/core",
+        "react-hook-form",
+        "@hookform/resolvers",
+        "zod"
+      ],
+      "files": [
+        {
+          "path": "src/SpawnForm.tsx",
+          "type": "registry:component",
+          "target": "components/spawnflow/SpawnForm.tsx"
+        },
+        {
+          "path": "src/widgets.tsx",
+          "type": "registry:component",
+          "target": "components/spawnflow/widgets.tsx"
+        }
+      ],
+      "docs": "Point it at your Spawnflow backend: <SpawnForm client={createHttpClient({ baseUrl: '/api' })} subject=\"posts\" id={7} />. The schema contract (GET /spawnflow/schema/{subject}) drives everything: widgets, validation, per-role editability, live field eligibility. Generate types with `php artisan spawnflow:generate`."
+    }
+  ]
+}

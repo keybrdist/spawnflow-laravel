@@ -56,6 +56,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `Generator\Scaffolder` — ONE stub pipeline for `make:spawnflow-context` and `spawnflow:resource` (tokenized stubs, shared renderer); `stubs/fieldset.stub` added
   - MySQL-service CI job for introspection tests (`--group=mysql-introspection`, env-gated, skips locally without MySQL); JS CI job (conformance + typecheck + demo build)
 
+- **shadcn registry distribution** — `js/react-shadcn/registry.json` + `npm run registry:build` (shadcn CLI 3): `spawn-form` registry item installs SpawnForm + widgets as owned source into the consumer's repo (`components/spawnflow/`), depending on `@spawnflow/core` for contract/evaluator/client; built artifacts committed under `public/r/` for raw-URL installs
+- **`llms.txt`** — repo-root LLM onboarding: the chain, the two permission axes, the no-drift contract, write-path enforcement
+
 ### Changed
 - `SchemaController` responses now follow schema contract v1 (`spawnflow: "1"`, joined descriptors, structured rules per variant); previous ad-hoc response shapes replaced
 - Resolved schema endpoint (`/schema/{subject}/{id}`) no longer requires ownership: resolution is read-only, any authenticated user gets their variant (viewer cases now reachable); missing record → 404

@@ -464,6 +464,22 @@ Relation fields get a data source for free. When schema routes are enabled, `GET
 
 ---
 
+## Owning the Form Source (shadcn registry)
+
+The renderer is also distributed as a shadcn registry item, so the
+presentational source lands in **your** repo — restyle it, rewrite it,
+let your LLM edit it. The contract, evaluator, and client stay versioned
+in `@spawnflow/core`:
+
+```bash
+npx shadcn add https://raw.githubusercontent.com/spawnflow/spawnflow-laravel/main/js/react-shadcn/public/r/spawn-form.json
+# → components/spawnflow/SpawnForm.tsx + widgets.tsx, yours to edit
+```
+
+Registry artifacts build from the same source as the npm package
+(`npm run registry:build` in `js/react-shadcn`) — pick whichever
+distribution fits: dependency (npm) or owned code (registry).
+
 ## React Renderer (`js/react-shadcn`)
 
 `@spawnflow/react-shadcn` renders complete forms from the schema contract — shadcn-styled widgets, react-hook-form + Zod under the hood:

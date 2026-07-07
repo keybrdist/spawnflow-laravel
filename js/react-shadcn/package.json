@@ -15,5 +15,11 @@
   },
   "dependencies": {
     "@spawnflow/core": "*"
+  },
+  "scripts": {
+    "registry:build": "shadcn build"
+  },
+  "devDependencies": {
+    "shadcn": "^3.0.0"
   }
 }
