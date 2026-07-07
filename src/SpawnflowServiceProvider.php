@@ -37,6 +37,20 @@ class SpawnflowServiceProvider extends ServiceProvider
             ]);
         }
 
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'spawnflow');
+
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../resources/views' => resource_path('views/vendor/spawnflow'),
+            ], 'spawnflow-views');
+        }
+
+        // Optional renderer: registered only when the host app ships
+        // Livewire — the package does not depend on it.
+        if (class_exists(\Livewire\Livewire::class)) {
+            \Livewire\Livewire::component('spawnflow-form', \Spawnflow\Livewire\SpawnForm::class);
+        }
+
         $this->registerSchemaRoutes();
     }
 

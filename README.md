@@ -464,6 +464,26 @@ Relation fields get a data source for free. When schema routes are enabled, `GET
 
 ---
 
+## Livewire Renderer
+
+Server-rendered Laravel apps get the same machinery with zero JavaScript
+contract: ONE generic schema-interpreting component (no per-form classes),
+registered automatically when Livewire is installed.
+
+```blade
+<livewire:spawnflow-form subject="posts" :record-id="$post->id" />
+```
+
+- Widgets, labels, options come from the FieldSet descriptors; per-role
+  editability from the context enum — identical to the React renderer.
+- Eligibility rules re-evaluate **server-side on every update** (the PHP
+  evaluator is the only evaluator; `serverResolved()` needs no special
+  handling here).
+- Saves run through the same `Flow` chain as the HTTP path — ownership,
+  variant stripping, rule enforcement, validation. One write path, two
+  renderers.
+- Restyle via `php artisan vendor:publish --tag=spawnflow-views`.
+
 ## Owning the Form Source (shadcn registry)
 
 The renderer is also distributed as a shadcn registry item, so the

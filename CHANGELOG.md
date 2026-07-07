@@ -59,6 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **shadcn registry distribution** — `js/react-shadcn/registry.json` + `npm run registry:build` (shadcn CLI 3): `spawn-form` registry item installs SpawnForm + widgets as owned source into the consumer's repo (`components/spawnflow/`), depending on `@spawnflow/core` for contract/evaluator/client; built artifacts committed under `public/r/` for raw-URL installs
 - **`llms.txt`** — repo-root LLM onboarding: the chain, the two permission axes, the no-drift contract, write-path enforcement
 
+- **Livewire renderer** — `<livewire:spawnflow-form subject="posts" :record-id="$id" />`: ONE generic schema-interpreting component (Filament's proven model, no per-form classes), auto-registered when Livewire is present (`suggest`ed, not required); six widgets (input/textarea/number/checkbox/select/date); eligibility re-evaluated server-side per update; saves flow through the same `Flow` chain as HTTP (ownership, variant strip, rule enforcement); views publishable via `spawnflow-views`
+
 ### Changed
 - `SchemaController` responses now follow schema contract v1 (`spawnflow: "1"`, joined descriptors, structured rules per variant); previous ad-hoc response shapes replaced
 - Resolved schema endpoint (`/schema/{subject}/{id}`) no longer requires ownership: resolution is read-only, any authenticated user gets their variant (viewer cases now reachable); missing record → 404
