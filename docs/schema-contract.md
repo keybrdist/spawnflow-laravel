@@ -83,7 +83,7 @@ The per-field identity object. Keys are omitted when at their default.
 | `label` | string | Explicit or humanized field name. |
 | `nullable` | bool | Present only when true. |
 | `default` | mixed | Present only when set. |
-| `wire` | string | Declared wire format for legacy coercions (e.g. `on_off` for booleans stored as `'on'/'off'`). Both sides coerce from this one declaration. |
+| `wire` | string | Declared wire format: `on_off` (booleans stored `'on'/'off'`), `csv` (arrays stored comma-joined), `json` (arrays/objects stored encoded). One declaration, both sides: the server coerces on the write path (validate sees the stored shape, save stores it — idempotent for already-wire payloads); clients coerce for display. Eligibility conditions evaluate RAW submitted/stored values — write conditions on wire fields against the wire literals, or mark them `serverResolved()`. |
 | `writeOnly` | bool | Accepted on write, never in responses (passwords). Present only when true. |
 | `options` | array | Enum fields only. `{value, label}` pairs; labels come from a `label()` method on the enum when defined, else humanized case names. Respects `only()` restrictions. |
 | `relation` | object | Relation fields only. `subject` is the registered alias of the related model (null if unregistered). `options_url` is present when the schema routes are enabled — the options endpoint for this field. |

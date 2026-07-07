@@ -205,9 +205,12 @@ final class Field
     }
 
     /**
-     * Declare a non-standard wire format (e.g. 'on_off' for booleans
-     * stored as 'on'/'off' strings). Serialized into the schema so both
-     * sides coerce from one declaration.
+     * Declare a non-standard wire format. Serialized into the schema so
+     * both sides coerce from one declaration; the server applies it on
+     * the write path (see coerceWire()).
+     *
+     * Formats: 'on_off' (booleans stored as 'on'/'off'), 'csv' (arrays
+     * stored comma-joined), 'json' (arrays/objects stored JSON-encoded).
      */
     public function wire(string $format): self
     {
@@ -457,6 +460,40 @@ final class Field
     public function getOptionValues(): array
     {
         return array_column($this->getOptions(), 'value');
+    }
+
+    /**
+     * Coerce an inbound logical value to the declared wire (storage)
+     * format. Idempotent: already-wire values pass through, so payloads
+     * from legacy transforms and modern boolean/array clients both land
+     * on the same stored shape. No wire format → value untouched.
+     */
+    public function coerceWire(mixed $value): mixed
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return match ($this->wireFormat) {
+            'on_off' => match (true) {
+                is_bool($value) => $value ? 'on' : 'off',
+                $value === 1, $value === '1', $value === 'true' => 'on',
+                $value === 0, $value === '0', $value === 'false', $value === '' => 'off',
+                default => $value,
+            },
+            'csv' => is_array($value)
+                ? implode(',', array_map(
+                    fn ($element) => match (true) {
+                        $element === null => '',
+                        is_array($element), is_object($element) => json_encode($element),
+                        default => (string) $element,
+                    },
+                    $value,
+                ))
+                : $value,
+            'json' => is_array($value) || is_object($value) ? json_encode($value) : $value,
+            default => $value,
+        };
     }
 
     /**

@@ -107,6 +107,14 @@ class TableIntrospector
             return "Field::string('{$name}')->rules('in:{$values}') /* enum column — consider Field::enum() with a backed enum */";
         }
 
+        // Legacy on/off flags: varchar columns defaulting to 'on'/'off'
+        // are booleans wearing a wire format — declare them as bool with
+        // the coercion attached, one declaration for both sides.
+        $default = is_string($column['default'] ?? null) ? trim($column['default'], "'") : null;
+        if (in_array($column['type_name'], ['varchar', 'char', 'string'], true) && in_array($default, ['on', 'off'], true)) {
+            return "Field::bool('{$name}')->wire('on_off')";
+        }
+
         return match ($column['type_name']) {
             'varchar', 'char', 'string' => "Field::string('{$name}')",
             'text', 'tinytext', 'mediumtext', 'longtext' => "Field::text('{$name}')",

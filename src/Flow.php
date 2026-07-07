@@ -205,6 +205,12 @@ class Flow
             $rules = array_diff_key($rules, array_flip($this->ruleIneligibleFields($data)));
         }
 
+        // Validation sees the STORED shape: declared wire formats coerce
+        // the data copy (booleans → 'on'/'off', arrays → csv/json), so
+        // rules written against storage ('in:on,off') hold for logical
+        // payloads too. Idempotent for already-wire values.
+        $data = $this->coerceWireFormats($data);
+
         if ($this->request->headers->has('Precognition')) {
             $this->validatePrecognitive($rules, $data);
         }
@@ -272,6 +278,10 @@ class Flow
         // clear-on-ineligible semantics. Rules are enforced, never
         // cosmetic: a crafted payload cannot write through a rule.
         $data = array_diff_key($data, array_flip($this->ruleIneligibleFields($data)));
+
+        // Declared wire formats coerce to the stored shape last — after
+        // permission/eligibility decisions, which evaluate raw values.
+        $data = $this->coerceWireFormats($data);
 
         if ($this->instance) {
             // Update existing record
@@ -343,6 +353,34 @@ class Flow
         $current = $this->instance?->attributesToArray() ?? [];
 
         return Eligibility::ineligible($fieldSet, array_merge($current, $data));
+    }
+
+    /**
+     * Apply declared wire formats to inbound data: one declaration
+     * (Field::wire) drives both the schema the client sees and the
+     * server-side storage coercion.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    protected function coerceWireFormats(array $data): array
+    {
+        $fieldSet = $this->subjectAlias !== null
+            ? $this->registry->fieldsFor($this->subjectAlias)
+            : null;
+
+        if ($fieldSet === null) {
+            return $data;
+        }
+
+        foreach ($data as $name => $value) {
+            $field = $fieldSet::field($name);
+            if ($field !== null) {
+                $data[$name] = $field->coerceWire($value);
+            }
+        }
+
+        return $data;
     }
 
     // ---------------------------------------------------------------

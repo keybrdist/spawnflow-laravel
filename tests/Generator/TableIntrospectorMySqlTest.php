@@ -39,6 +39,7 @@ beforeEach(function (): void {
         reference VARCHAR(64) NOT NULL,
         contact_email VARCHAR(190) NULL,
         emailSubject VARCHAR(190) NULL,
+        enablePlayback VARCHAR(5) NOT NULL DEFAULT 'on',
         notes TEXT NULL,
         state ENUM('pending', 'paid', 'shipped') NOT NULL DEFAULT 'pending',
         is_priority TINYINT(1) NOT NULL DEFAULT 0,
@@ -66,6 +67,7 @@ test('MySQL column types map to the right descriptors', function (): void {
         ->toContain("Field::text('notes')->nullable()")
         ->toContain("Field::email('contact_email')")
         ->toContain("Field::string('emailSubject')")
+        ->toContain("Field::bool('enablePlayback')->wire('on_off')")
         ->toContain("Field::string('state')->rules('in:pending,paid,shipped')")
         ->toContain("Field::bool('is_priority')")
         ->toContain("Field::float('total')->rules('required')")

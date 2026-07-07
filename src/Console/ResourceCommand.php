@@ -28,6 +28,7 @@ class ResourceCommand extends Command
         {--generate : Infer field descriptors from the database table}
         {--model= : Model class (default: App\\Models\\{name})}
         {--table= : Table name (default: the model\'s table)}
+        {--no-context : Skip the FieldContext enum (subject has no role×state permission variants)}
         {--force : Overwrite existing files}';
 
     protected $description = 'Scaffold a Spawnflow resource: FieldSet + FieldContext, self-registered via #[SpawnSubject]';
@@ -43,10 +44,12 @@ class ResourceCommand extends Command
         $fieldsClass = "{$name}Fields";
         $contextClass = "{$name}Context";
 
+        $withContext = ! $this->option('no-context');
+
         $fieldsPath = "{$directory}/{$fieldsClass}.php";
         $contextPath = "{$directory}/{$contextClass}.php";
 
-        foreach ([$fieldsPath, $contextPath] as $path) {
+        foreach ($withContext ? [$fieldsPath, $contextPath] : [$fieldsPath] as $path) {
             if (is_file($path) && ! $this->option('force')) {
                 $this->components->error(basename($path).' already exists. Use --force to overwrite.');
 
@@ -65,13 +68,15 @@ class ResourceCommand extends Command
             $fieldsClass,
             $alias,
             $model,
-            $namespace.'\\'.$contextClass,
+            $withContext ? $namespace.'\\'.$contextClass : null,
             $fieldLines,
         ));
         $this->components->info("Created {$fieldsPath}");
 
-        file_put_contents($contextPath, Scaffolder::contextEnum($namespace, $contextClass, $this->contextLists($names, $visible)));
-        $this->components->info("Created {$contextPath}");
+        if ($withContext) {
+            file_put_contents($contextPath, Scaffolder::contextEnum($namespace, $contextClass, $this->contextLists($names, $visible)));
+            $this->components->info("Created {$contextPath}");
+        }
 
         // The discovery cache (if built) predates this resource — bust it
         // so the new subject is immediately routable.

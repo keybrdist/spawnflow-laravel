@@ -63,6 +63,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **SSE invalidation channel (opt-in)** — `GET /spawnflow/events` (`spawnflow.events` flag, same middleware as schema routes): Flow writes bump per-subject versions (`Support\SubjectVersion`) and dispatch typed `Events\SubjectChanged`; the stream (`response()->eventStream()`) pushes `change` signals, `since[subject]=n` replays missed changes; signals only — clients refetch via existing endpoints, dropped stream degrades to non-live, never wrong data; `subscribeToChanges()` helper in `@spawnflow/core`
 
+- **Wire-format server coercion** — `Field::wire('on_off'|'csv'|'json')` now drives the write path, not just the schema: `Flow::validate()` coerces the data copy (storage-format rules like `in:on,off` hold for boolean payloads) and `Flow::save()` stores the wire shape; idempotent for already-wire values, applied after permission/eligibility decisions. `TableIntrospector` auto-detects legacy on/off varchar flags (default `'on'`/`'off'`) as `Field::bool(...)->wire('on_off')`. `spawnflow:resource --no-context` for subjects without permission variants. Retires blanket payload-transform traits: one declaration, both sides
+
 ### Changed
 - `SchemaController` responses now follow schema contract v1 (`spawnflow: "1"`, joined descriptors, structured rules per variant); previous ad-hoc response shapes replaced
 - Resolved schema endpoint (`/schema/{subject}/{id}`) no longer requires ownership: resolution is read-only, any authenticated user gets their variant (viewer cases now reachable); missing record → 404

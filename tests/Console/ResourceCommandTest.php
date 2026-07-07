@@ -77,3 +77,12 @@ test('generating a resource busts the discovery cache', function (): void {
 
     expect(is_file(SubjectDiscovery::cachePath()))->toBeFalse();
 });
+
+test('--no-context skips the context enum and the attribute context arg', function (): void {
+    $this->artisan('spawnflow:resource', ['name' => 'Brief', '--no-context' => true])->assertSuccessful();
+
+    expect(File::exists("{$this->directory}/BriefContext.php"))->toBeFalse()
+        ->and(File::get("{$this->directory}/BriefFields.php"))
+        ->toContain("#[SpawnSubject('briefs', model: \\App\\Models\\Brief::class)]")
+        ->not->toContain('context:');
+});
