@@ -72,7 +72,7 @@ test('MySQL column types map to the right descriptors', function (): void {
         ->toContain("Field::bool('is_priority')")
         ->toContain("Field::float('total')->rules('required')")
         ->toContain("Field::date('shipped_on')->nullable()")
-        ->toContain("Field::json('meta')->nullable()")
+        ->toContain("Field::json('meta')->wire('json')->nullable()")
         // FK without a matching model class falls back honestly.
         ->toContain("Field::int('customer_id') /* FK to intro_customers")
         // auto-increment PK and ownership column never appear.

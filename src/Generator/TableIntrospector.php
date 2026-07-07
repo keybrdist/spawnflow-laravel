@@ -126,7 +126,9 @@ class TableIntrospector
             'decimal', 'numeric', 'float', 'double', 'real' => "Field::float('{$name}')",
             'date' => "Field::date('{$name}')",
             'datetime', 'timestamp' => "Field::datetime('{$name}')",
-            'json', 'jsonb' => "Field::json('{$name}')",
+            // wire('json') so structured payloads store encoded even
+            // without an Eloquent cast on the model.
+            'json', 'jsonb' => "Field::json('{$name}')->wire('json')",
             default => "Field::string('{$name}') /* unrecognized column type: {$column['type_name']} */",
         };
     }
