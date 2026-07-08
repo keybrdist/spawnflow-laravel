@@ -35,6 +35,10 @@ jobs:
 
       - name: Install dependencies
         run: |
+          # Advisory blocking would refuse Laravel 11 outright (unpatched
+          # advisories across all of v11) — this is a compat test matrix,
+          # not a deploy; resolution must not be gated on advisories.
+          composer config policy.advisories.block false
           composer require "illuminate/database:${{ matrix.laravel }}" "illuminate/http:${{ matrix.laravel }}" "illuminate/support:${{ matrix.laravel }}" "illuminate/validation:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
           composer update --prefer-dist --no-interaction
 
@@ -94,7 +98,9 @@ jobs:
 
       - name: Install
         working-directory: js
-        run: npm ci
+        # npm install, not ci: js/.gitignore intentionally excludes
+        # package-lock.json, and npm ci refuses to run without one.
+        run: npm install
 
       - name: Core tests (conformance fixtures)
         working-directory: js

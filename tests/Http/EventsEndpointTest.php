@@ -61,6 +61,10 @@ test('delete bumps too', function (): void {
 });
 
 test('the stream pushes change events for bumped subjects', function (): void {
+    if (! class_exists(Illuminate\Http\StreamedEvent::class)) {
+        $this->markTestSkipped('SSE channel requires Laravel 12 (StreamedEvent).');
+    }
+
     $this->actingAs(eventsUser());
 
     // Route registration happens at boot; re-register with events on.
@@ -84,6 +88,10 @@ test('the stream pushes change events for bumped subjects', function (): void {
 });
 
 test('unknown subjects are filtered out of the stream subscription', function (): void {
+    if (! class_exists(Illuminate\Http\StreamedEvent::class)) {
+        $this->markTestSkipped('SSE channel requires Laravel 12 (StreamedEvent).');
+    }
+
     $this->actingAs(eventsUser());
 
     Route::middleware([])->prefix('spawnflow')->group(function (): void {
