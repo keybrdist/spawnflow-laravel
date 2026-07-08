@@ -509,6 +509,15 @@ final class Field
     {
         $rules = $this->type->impliedRules();
 
+        // Wire formats change the shape validation sees: the write path
+        // coerces BEFORE validating (see Flow), so a bool stored as
+        // 'on'/'off' must imply membership of the stored values, not
+        // `boolean`.
+        if ($this->wireFormat === 'on_off') {
+            $rules = array_values(array_diff($rules, ['boolean']));
+            $rules[] = 'in:on,off';
+        }
+
         if ($this->type === FieldType::Enum) {
             $rules[] = 'in:'.implode(',', $this->getOptionValues());
         }

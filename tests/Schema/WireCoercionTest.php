@@ -101,3 +101,24 @@ test('validate sees the stored shape so storage-format rules hold', function ():
         ->resolve('posts')
         ->validate(['status' => 'in:on,off'], ['status' => true]);
 })->throwsNoExceptions();
+
+test('on_off fields imply in:on,off instead of boolean — resolver rules pass for both logical and wire payloads', function (): void {
+    config()->set('spawnflow.fields.posts', WirePostFields::class);
+    config()->set('spawnflow.contexts.posts', null);
+
+    expect(Field::bool('active')->wire('on_off')->impliedRawRules())
+        ->toContain('in:on,off')
+        ->not->toContain('boolean');
+
+    $user = User::create(['name' => 'W3', 'email' => uniqid().'@x.com', 'roles' => '']);
+    $request = Request::create('/test', 'POST');
+    $request->setUserResolver(fn () => $user);
+
+    foreach ([true, 'on', false, 'off'] as $payload) {
+        (new Flow)
+            ->spawn($request)
+            ->auth()
+            ->resolve('posts')
+            ->validate(data: ['title' => 'T', 'status' => $payload]);
+    }
+})->throwsNoExceptions();
