@@ -11,10 +11,15 @@ Key facts for code generation:
 - The schema contract (docs/schema-contract.md) is the single source of truth: `GET /spawnflow/schema/{subject}/{id?}` serves it; `php artisan spawnflow:generate` emits TypeScript types + Zod schemas from the same serializer — no drift possible.
 - Write path enforces everything: variant-ineligible and rule-ineligible fields are discarded on save, never trusted from the client.
 
+## MCP
+
+- Optional MCP server (requires laravel/mcp; config spawnflow.mcp.enabled): tools list-subjects, get-schema, check-eligibility, validate-payload (dry-run, never writes), scaffold-resource + generate-types (local stdio only), and runtime CRUD (create/update/delete/get/list/field-options) that runs the full Flow chain and returns the PERSISTED record. Resources serve this file, the schema contract doc, and the conformance fixtures. See docs/mcp.md.
+
 ## Docs
 
 - [README](README.md): install, chain API, context enums, escape hatches
 - [Schema contract](docs/schema-contract.md): the wire format — descriptors, structured rules, eligibility envelopes, resolved verdicts, groups
+- [MCP server](docs/mcp.md): tools, transports, security model
 - [CHANGELOG](CHANGELOG.md): feature history
 
 ## Frontend

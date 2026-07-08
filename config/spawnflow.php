@@ -116,4 +116,26 @@ return [
         'emit_client' => true,
         'emit_unions' => true,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | MCP Server
+    |--------------------------------------------------------------------------
+    |
+    | The contract, queryable and operable by AI agents. Disabled by
+    | default — registration is a no-op when off. `enabled` exposes the
+    | stdio (local/dev) server; `web` additionally exposes the streamable
+    | HTTP transport behind `web_middleware` (the authenticated token's
+    | user IS the Flow user — ownership, contexts, eligibility and wire
+    | coercion apply exactly as on the HTTP path). Dev tools (scaffold,
+    | generate) register only in the local environment over stdio,
+    | regardless of these flags.
+    |
+    */
+    'mcp' => [
+        'enabled' => false,
+        'web' => false,
+        'web_route' => '/mcp/spawnflow',
+        'web_middleware' => ['auth:api', 'throttle:60,1'],
+    ],
 ];

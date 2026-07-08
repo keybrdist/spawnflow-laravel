@@ -11,6 +11,7 @@ abstract class TestCase extends BaseTestCase
     {
         return [
             \Livewire\LivewireServiceProvider::class,
+            \Laravel\Mcp\Server\McpServiceProvider::class,
             SpawnflowServiceProvider::class,
         ];
     }

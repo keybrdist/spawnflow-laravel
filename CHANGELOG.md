@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **MCP server** (`Spawnflow\Mcp\SpawnflowServer`, optional `laravel/mcp`) — the contract, queryable and operable by AI agents. Introspection tools (`list-subjects`, `get-schema` — serializer output verbatim, `check-eligibility`), dry-run `validate-payload`, local-only dev tools (`scaffold-resource`, `generate-types` — absent from tools/list outside local stdio), and opt-in runtime CRUD tools that run the full Flow chain and return the persisted record. Resources serve `llms.txt`, the schema contract doc, and the conformance fixtures; prompts guide add-resource and eligibility debugging. Disabled by default (`spawnflow.mcp.enabled`); HTTP transport opt-in behind `auth:api`. See `docs/mcp.md`.
 - **Schema contract v1** (`docs/schema-contract.md`) — versioned, machine-readable field schema for type-aware form rendering and client-side validation generation
 - `Schema\Field` — type-aware field descriptor (type, widget, label, rules, nullable/default, wire format, write-only) with named constructors (`string`, `text`, `int`, `float`, `bool`, `date`, `datetime`, `email`, `password`, `json`, `file`, `enum`, `belongsTo`, `belongsToMany`)
 - `Schema\FieldSet` — per-subject field descriptor registry, wired via `config('spawnflow.fields')`

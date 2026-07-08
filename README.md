@@ -607,6 +607,27 @@ Even for custom endpoints, the chain's escape hatches (`getUser()`, `getInstance
 
 ---
 
+## MCP Server
+
+The contract is queryable and operable by AI agents over the Model Context
+Protocol. A thin adapter — every tool delegates to an existing owner
+(registry, serializer, eligibility, the Flow chain, artisan commands):
+
+```bash
+composer require laravel/mcp
+# config/spawnflow.php: 'mcp' => ['enabled' => true]
+claude mcp add spawnflow -- php artisan mcp:start spawnflow
+```
+
+Dev tools (introspect schemas, evaluate eligibility verdicts, scaffold
+resources from real tables, regenerate types) register only in the local
+environment over stdio. Runtime CRUD tools (opt-in `mcp.web`, behind
+`auth:api`) run the full Flow chain — ownership, contexts, eligibility and
+wire coercion enforced exactly as over HTTP, returning the persisted record.
+See [docs/mcp.md](docs/mcp.md).
+
+---
+
 ## Configuration Reference
 
 ```php

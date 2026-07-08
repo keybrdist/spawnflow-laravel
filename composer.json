@@ -1,6 +1,6 @@
 {
     "name": "spawnflow/spawnflow-laravel",
-    "description": "Fluent, chain-based API request lifecycle for Laravel. Spawn context, resolve subjects, gate ownership, validate, persist \u2014 in one expression.",
+    "description": "Fluent, chain-based API request lifecycle for Laravel. Spawn context, resolve subjects, gate ownership, validate, persist — in one expression.",
     "type": "library",
     "license": "MIT",
     "keywords": [
@@ -34,7 +34,8 @@
     "require-dev": {
         "livewire/livewire": "^4.3",
         "orchestra/testbench": "^9.0|^10.0",
-        "pestphp/pest": "^2.0|^3.0"
+        "pestphp/pest": "^2.0|^3.0",
+        "laravel/mcp": "^0.8.2"
     },
     "autoload": {
         "psr-4": {
@@ -61,6 +62,7 @@
         }
     },
     "suggest": {
-        "livewire/livewire": "Enables the <livewire:spawnflow-form> server-rendered renderer (^3.0|^4.0)"
+        "livewire/livewire": "Enables the <livewire:spawnflow-form> server-rendered renderer (^3.0|^4.0)",
+        "laravel/mcp": "Required to expose the SpawnFlow MCP server (spawnflow.mcp.enabled)."
     }
 }
