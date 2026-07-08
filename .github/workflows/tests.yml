@@ -94,7 +94,9 @@ jobs:
 
       - name: Install
         working-directory: js
-        run: npm ci
+        # npm install, not ci: js/.gitignore intentionally excludes
+        # package-lock.json, and npm ci refuses to run without one.
+        run: npm install
 
       - name: Core tests (conformance fixtures)
         working-directory: js
