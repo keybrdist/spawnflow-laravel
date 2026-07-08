@@ -106,8 +106,34 @@ function ResolvedForm({
     defaults[field.name] = values?.[field.name] ?? field.default ?? (field.type === 'bool' ? false : undefined);
   }
 
+  // Verdict-aware resolver: rule-ineligible fields are discarded by the
+  // server, never validated — mirror that BEFORE Zod sees the values, so
+  // a hidden required field cannot block submit client-side.
+  const resolver = useMemo(() => {
+    const base = zodResolver(zodSchema as never);
+    return async (vals: Record<string, any>, ctx: unknown, options: unknown) => {
+      const submitVerdicts = fieldVerdicts(normalized, vals);
+      const ineligible = Object.entries(submitVerdicts)
+        .filter(([, verdict]) => !verdict.visible || !verdict.enabled)
+        .map(([name]) => name);
+
+      const eligible: Record<string, any> = { ...vals };
+      for (const name of ineligible) delete eligible[name];
+
+      const result = await (base as any)(eligible, ctx, options);
+      if (result.errors && ineligible.length > 0) {
+        const errors = { ...result.errors };
+        for (const name of ineligible) delete errors[name];
+        const failed = Object.keys(errors).length > 0;
+        return failed ? { values: {}, errors } : { values: eligible, errors: {} };
+      }
+
+      return result;
+    };
+  }, [zodSchema, normalized]);
+
   const form = useForm<Record<string, any>>({
-    resolver: zodResolver(zodSchema as never),
+    resolver: resolver as never,
     defaultValues: defaults,
     mode: 'onBlur',
   });
