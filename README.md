@@ -492,7 +492,7 @@ let your LLM edit it. The contract, evaluator, and client stay versioned
 in `@spawnflow/core`:
 
 ```bash
-npx shadcn add https://raw.githubusercontent.com/spawnflow/spawnflow-laravel/main/js/react-shadcn/public/r/spawn-form.json
+npx shadcn add https://raw.githubusercontent.com/keybrdist/spawnflow-laravel/main/js/react-shadcn/public/r/spawn-form.json
 # → components/spawnflow/SpawnForm.tsx + widgets.tsx, yours to edit
 ```
 

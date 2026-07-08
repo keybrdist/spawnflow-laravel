@@ -65,6 +65,36 @@ test('context-less subjects generate a single default variant with implied rules
         ->toContain('/* server: exists */');
 });
 
+test('on_off wire fields type as boolean-or-wire-string on both emitters', function (): void {
+    config()->set('spawnflow.subjects', array_merge(config('spawnflow.subjects'), [
+        'flags' => Post::class,
+    ]));
+    config()->set('spawnflow.fields', array_merge(config('spawnflow.fields'), [
+        'flags' => (new class extends FieldSet
+        {
+            public static function fields(): array
+            {
+                return [
+                    Field::bool('active')->wire('on_off')->nullable(),
+                    Field::bool('plain'),
+                ];
+            }
+        })::class,
+    ]));
+
+    $this->artisan('spawnflow:generate')->assertSuccessful();
+
+    $flags = file_get_contents("{$this->outputPath}/flags.ts");
+
+    // Writes accept logical booleans (server coerces); reads return the
+    // stored 'on'/'off' strings — the type must admit both.
+    expect($flags)
+        ->toContain("active: boolean | 'on' | 'off' | null;")
+        ->toContain("active: z.union([z.boolean(), z.literal('on'), z.literal('off')]).nullable()")
+        ->toContain('plain: boolean;')
+        ->toContain('plain: z.boolean()');
+});
+
 test('fails cleanly without an output path', function (): void {
     config()->set('spawnflow.generator', []);
 

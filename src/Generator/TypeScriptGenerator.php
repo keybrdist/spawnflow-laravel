@@ -201,7 +201,9 @@ TS;
     {
         $type = match ($descriptor['type'] ?? 'string') {
             'int', 'float' => 'number',
-            'bool' => 'boolean',
+            // on_off wire: writes accept logical booleans (the server
+            // coerces), reads return the stored 'on'/'off' strings.
+            'bool' => ($descriptor['wire'] ?? null) === 'on_off' ? "boolean | 'on' | 'off'" : 'boolean',
             'enum' => $this->enumTsType($descriptor['options'] ?? []),
             'relation' => ($descriptor['relation']['multiple'] ?? false) ? 'number[]' : 'number',
             'json' => 'unknown',

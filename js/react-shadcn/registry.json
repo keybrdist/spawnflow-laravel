@@ -1,7 +1,7 @@
 {
   "$schema": "https://ui.shadcn.com/schema/registry.json",
   "name": "spawnflow",
-  "homepage": "https://github.com/spawnflow/spawnflow-laravel",
+  "homepage": "https://github.com/keybrdist/spawnflow-laravel",
   "items": [
     {
       "name": "spawn-form",

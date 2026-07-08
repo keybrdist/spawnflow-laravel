@@ -73,7 +73,10 @@ class ZodCompiler
         }
 
         if ($type === 'bool') {
-            return 'z.boolean()';
+            // on_off wire: logical booleans on write, 'on'/'off' on read.
+            return ($descriptor['wire'] ?? null) === 'on_off'
+                ? "z.union([z.boolean(), z.literal('on'), z.literal('off')])"
+                : 'z.boolean()';
         }
 
         if ($type === 'json' || $type === 'file') {
