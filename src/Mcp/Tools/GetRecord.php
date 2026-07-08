@@ -9,6 +9,7 @@ use Laravel\Mcp\Server\Tool;
 use Spawnflow\Exceptions\ForbiddenFieldAccessException;
 use Spawnflow\Exceptions\OwnershipException;
 use Spawnflow\Flow;
+use Spawnflow\Mcp\Tools\Concerns\RegistersWhenAuthenticated;
 use Spawnflow\Mcp\Tools\Concerns\ResolvesSubjects;
 use Spawnflow\Mcp\Tools\Concerns\RunsFlows;
 
@@ -18,6 +19,7 @@ use Spawnflow\Mcp\Tools\Concerns\RunsFlows;
  */
 class GetRecord extends Tool
 {
+    use RegistersWhenAuthenticated;
     use ResolvesSubjects;
     use RunsFlows;
 

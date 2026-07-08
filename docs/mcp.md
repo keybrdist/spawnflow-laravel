@@ -60,7 +60,10 @@ user IS the Flow user; there is no impersonation parameter.
 
 Dev tools gate themselves via `eligibleForRegistration()` — outside the local
 environment (or over HTTP) they are **absent from `tools/list`**, not
-runtime-guarded.
+runtime-guarded. Runtime CRUD tools apply the same principle the other way:
+they act AS a user, so without an authenticated user (a bare stdio session)
+they too are absent from discovery; the web transport's auth middleware
+guarantees one.
 
 ## Resources
 

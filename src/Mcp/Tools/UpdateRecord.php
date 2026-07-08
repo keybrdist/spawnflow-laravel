@@ -7,9 +7,11 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
+use Spawnflow\Eligibility\Eligibility;
 use Spawnflow\Exceptions\ForbiddenFieldAccessException;
 use Spawnflow\Exceptions\OwnershipException;
 use Spawnflow\Flow;
+use Spawnflow\Mcp\Tools\Concerns\RegistersWhenAuthenticated;
 use Spawnflow\Mcp\Tools\Concerns\ResolvesSubjects;
 use Spawnflow\Mcp\Tools\Concerns\RunsFlows;
 use Spawnflow\Validation\RuleResolver;
@@ -22,6 +24,7 @@ use Spawnflow\Validation\RuleResolver;
  */
 class UpdateRecord extends Tool
 {
+    use RegistersWhenAuthenticated;
     use ResolvesSubjects;
     use RunsFlows;
 
@@ -46,19 +49,30 @@ class UpdateRecord extends Tool
         $id = (int) $request->get('id');
         $payload = (array) $request->get('payload', []);
 
-        // Partial-update semantics: validate only the submitted fields.
-        $rules = array_intersect_key(
-            app(RuleResolver::class)->for($alias, null),
-            $payload,
-        );
-
         try {
-            $response = (new Flow)
+            $flow = (new Flow)
                 ->spawn($this->httpRequest($request, $payload))
                 ->auth()
                 ->resolve($alias)
                 ->ask('POST', $id)
-                ->fields()
+                ->fields();
+
+            // Partial-update semantics: validate only the submitted fields —
+            // resolved AGAINST the record's active context (its validation()
+            // overrides win), minus rule-ineligible fields, whose values the
+            // save path discards rather than validates.
+            $rules = array_intersect_key(
+                app(RuleResolver::class)->for($alias, $flow->getContext()),
+                $payload,
+            );
+
+            $fieldSet = $this->registry()->fieldsFor($alias);
+            if ($fieldSet !== null) {
+                $state = array_merge($flow->getInstance()?->attributesToArray() ?? [], $payload);
+                $rules = array_diff_key($rules, array_flip(Eligibility::ineligible($fieldSet, $state)));
+            }
+
+            $response = $flow
                 ->validate($rules, data: $payload)
                 ->save($payload)
                 ->present();

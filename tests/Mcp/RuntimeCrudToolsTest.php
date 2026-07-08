@@ -164,3 +164,31 @@ test('list pagination follows the page argument', function (): void {
         ->assertSee('"current_page":2')
         ->assertSee('"title":"P1"'); // default sort id desc → page 2 holds the oldest
 });
+
+test('update validates submitted fields against the record\'s active context rules', function (): void {
+    $owner = crudUser();
+    $post = Post::create(['title' => 'Valid', 'status' => 'draft', 'owner_id' => $owner->id]);
+
+    SpawnflowServer::actingAs($owner)
+        ->tool(UpdateRecord::class, [
+            'subject' => 'posts',
+            'id' => $post->id,
+            'payload' => ['title' => str_repeat('x', 300)],
+        ])
+        ->assertOk()
+        ->assertSee('"updated":false')
+        ->assertSee('"title"');
+
+    expect($post->refresh()->title)->toBe('Valid');
+});
+
+test('runtime tools are absent from discovery without an authenticated user', function (): void {
+    expect((new ListRecords)->eligibleForRegistration())->toBeFalse()
+        ->and((new UpdateRecord)->eligibleForRegistration())->toBeFalse()
+        ->and((new DeleteRecord)->eligibleForRegistration())->toBeFalse();
+
+    $this->actingAs(crudUser());
+
+    expect((new ListRecords)->eligibleForRegistration())->toBeTrue()
+        ->and((new CreateRecord)->eligibleForRegistration())->toBeTrue();
+});

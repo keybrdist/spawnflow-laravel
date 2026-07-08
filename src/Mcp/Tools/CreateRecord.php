@@ -9,6 +9,7 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
 use Spawnflow\Exceptions\ForbiddenFieldAccessException;
 use Spawnflow\Flow;
+use Spawnflow\Mcp\Tools\Concerns\RegistersWhenAuthenticated;
 use Spawnflow\Mcp\Tools\Concerns\ResolvesSubjects;
 use Spawnflow\Mcp\Tools\Concerns\RunsFlows;
 
@@ -19,6 +20,7 @@ use Spawnflow\Mcp\Tools\Concerns\RunsFlows;
  */
 class CreateRecord extends Tool
 {
+    use RegistersWhenAuthenticated;
     use ResolvesSubjects;
     use RunsFlows;
 
