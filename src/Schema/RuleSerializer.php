@@ -2,8 +2,11 @@
 
 namespace Spawnflow\Schema;
 
+use BackedEnum;
 use Closure;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Enum as EnumRule;
+use ReflectionProperty;
 use Stringable;
 
 /**
@@ -61,6 +64,13 @@ class RuleSerializer
         }
 
         if (is_object($rule)) {
+            // Enum rules serialize to their in-rule form on every framework
+            // major — Laravel 11's Enum object is not Stringable, so derive
+            // the membership from the backing enum's cases directly.
+            if ($rule instanceof EnumRule) {
+                return static::serializeEnumRule($rule);
+            }
+
             if ($rule instanceof Stringable) {
                 return static::serializeString((string) $rule);
             }
@@ -72,6 +82,36 @@ class RuleSerializer
         }
 
         return static::serializeString((string) $rule);
+    }
+
+    /**
+     * @return array{rule: string, params: array}
+     */
+    protected static function serializeEnumRule(EnumRule $rule): array
+    {
+        $read = function (string $property) use ($rule): mixed {
+            $ref = new ReflectionProperty($rule, $property);
+
+            return $ref->getValue($rule);
+        };
+
+        /** @var class-string<BackedEnum> $type */
+        $type = $read('type');
+        $only = $read('only');
+        $except = $read('except');
+
+        $values = [];
+        foreach ($type::cases() as $case) {
+            if ($only !== [] && ! in_array($case, $only, true)) {
+                continue;
+            }
+            if (in_array($case, $except, true)) {
+                continue;
+            }
+            $values[] = $case->value;
+        }
+
+        return ['rule' => 'in', 'params' => $values];
     }
 
     /**

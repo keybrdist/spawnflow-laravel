@@ -90,7 +90,9 @@ class SpawnflowServiceProvider extends ServiceProvider
                     ->whereNumber('id');
                 Route::get('/options/{subject}/{field}', [\Spawnflow\Http\OptionsController::class, 'show']);
 
-                if (config('spawnflow.events', false)) {
+                // The SSE channel rides Laravel 12's eventStream/StreamedEvent
+                // API — on Laravel 11 the route is simply absent.
+                if (config('spawnflow.events', false) && class_exists(\Illuminate\Http\StreamedEvent::class)) {
                     Route::get('/events', [\Spawnflow\Http\EventsController::class, 'show']);
                 }
             });
