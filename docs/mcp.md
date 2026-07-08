@@ -43,6 +43,11 @@ args = ["artisan", "mcp:start", "spawnflow"]
 `POST https://your-app.test/mcp/spawnflow` with a bearer token. The token's
 user IS the Flow user; there is no impersonation parameter.
 
+Runs cleanly alongside [Laravel Boost](https://github.com/laravel/boost)'s
+MCP server (`laravel-boost` handle) — Boost answers "what is this Laravel
+app" (schema, logs, docs search); SpawnFlow answers "what is this app's data
+contract". Connect an agent to both.
+
 ## Tools
 
 | Tool | Class | Notes |
