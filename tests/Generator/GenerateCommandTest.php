@@ -76,7 +76,7 @@ test('non-identifier field names and quotable enum values emit valid TypeScript'
         'tricky' => Post::class,
     ]));
     config()->set('spawnflow.fields', array_merge(config('spawnflow.fields'), [
-        'tricky' => new class extends FieldSet
+        'tricky' => (new class extends FieldSet
         {
             public static function fields(): array
             {
@@ -86,7 +86,7 @@ test('non-identifier field names and quotable enum values emit valid TypeScript'
                     Field::enum('label', QuotedEnum::class),
                 ];
             }
-        }::class,
+        })::class,
     ]));
 
     $this->artisan('spawnflow:generate')->assertSuccessful();
