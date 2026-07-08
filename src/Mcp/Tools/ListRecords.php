@@ -3,6 +3,7 @@
 namespace Spawnflow\Mcp\Tools;
 
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Pagination\Paginator;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -39,8 +40,13 @@ class ListRecords extends Tool
 
         $perPage = min(max((int) $request->get('per_page', 15), 1), 100);
 
+        // paginate() reads the page through the global resolver, not the
+        // synthetic request — pin it explicitly (same as GenericController).
+        $page = max((int) $request->get('page', 1), 1);
+        Paginator::currentPageResolver(fn (): int => $page);
+
         $response = (new Flow)
-            ->spawn($this->httpRequest($request, ['page' => (int) $request->get('page', 1)]))
+            ->spawn($this->httpRequest($request))
             ->auth()
             ->resolve($alias)
             ->list($perPage);

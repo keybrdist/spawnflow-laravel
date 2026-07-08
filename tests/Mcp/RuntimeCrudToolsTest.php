@@ -151,3 +151,16 @@ test('delete for a non-owner reads not-found and removes nothing', function (): 
 
     expect(Post::find($post->id))->not->toBeNull();
 });
+
+test('list pagination follows the page argument', function (): void {
+    $user = crudUser();
+    foreach (range(1, 3) as $i) {
+        Post::create(['title' => "P{$i}", 'status' => 'draft', 'owner_id' => $user->id]);
+    }
+
+    SpawnflowServer::actingAs($user)
+        ->tool(ListRecords::class, ['subject' => 'posts', 'per_page' => 2, 'page' => 2])
+        ->assertOk()
+        ->assertSee('"current_page":2')
+        ->assertSee('"title":"P1"'); // default sort id desc → page 2 holds the oldest
+});
