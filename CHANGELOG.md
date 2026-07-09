@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-09
+
+The Living Contract release: the schema contract becomes complete (types +
+validation + eligibility) and instant (3 commands to a working screen), with
+renderers for React and Livewire, agent access over MCP, and opt-in liveness.
+
 ### Added
 - **MCP server** (`Spawnflow\Mcp\SpawnflowServer`, optional `laravel/mcp`) — the contract, queryable and operable by AI agents. Introspection tools (`list-subjects`, `get-schema` — serializer output verbatim, `check-eligibility`), dry-run `validate-payload`, local-only dev tools (`scaffold-resource`, `generate-types` — absent from tools/list outside local stdio), and opt-in runtime CRUD tools that run the full Flow chain and return the persisted record. Resources serve `llms.txt`, the schema contract doc, and the conformance fixtures; prompts guide add-resource and eligibility debugging. Disabled by default (`spawnflow.mcp.enabled`); HTTP transport opt-in behind `auth:api`. See `docs/mcp.md`.
 - **Schema contract v1** (`docs/schema-contract.md`) — versioned, machine-readable field schema for type-aware form rendering and client-side validation generation
@@ -91,3 +97,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Publishable config and stubs
 - 29 Pest tests covering all chain methods
 - Support for Laravel 11 and 12, PHP 8.2+
+
+[Unreleased]: https://github.com/keybrdist/spawnflow-laravel/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/keybrdist/spawnflow-laravel/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/keybrdist/spawnflow-laravel/releases/tag/v0.1.0
