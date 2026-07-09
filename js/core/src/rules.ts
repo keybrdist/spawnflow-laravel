@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { FormField, StructuredRule } from './contract';
+import type { FormField, StructuredRule } from './contract.js';
 
 /**
  * Runtime compiler: structured contract rules → Zod. The client-side twin

@@ -1,6 +1,6 @@
-export * from './contract';
-export { createHttpClient, subscribeToChanges, type HttpClientOptions, type SubjectChange } from './client';
-export { compileField, compileForm, serverOnlyFields } from './rules';
+export * from './contract.js';
+export { createHttpClient, subscribeToChanges, type HttpClientOptions, type SubjectChange } from './client.js';
+export { compileField, compileForm, serverOnlyFields } from './rules.js';
 export {
   completeData,
   fieldVerdicts,
@@ -9,4 +9,4 @@ export {
   references,
   resolveRules,
   truthy,
-} from './eligibility';
+} from './eligibility.js';

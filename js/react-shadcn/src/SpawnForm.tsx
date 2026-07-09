@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import type { FormField, GroupDescriptor, Schema, SpawnClient, SubmitResult, Verdict } from '@spawnflow-dx/core';
 import { compileForm, fieldVerdicts, normalize } from '@spawnflow-dx/core';
-import { defaultWidgets, type WidgetComponent } from './widgets';
+import { defaultWidgets, type WidgetComponent } from './widgets.js';
 
 export interface SpawnFormProps {
   /** Pre-fetched contract schema (resolved or variants)… */

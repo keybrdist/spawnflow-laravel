@@ -9,7 +9,7 @@ import type {
   FormField,
   GroupDescriptor,
   Verdict,
-} from './contract';
+} from './contract.js';
 
 export class InvalidConditionError extends Error {}
 

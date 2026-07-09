@@ -1,6 +1,6 @@
 {
   "name": "@spawnflow-dx/react-shadcn",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Schema-driven, context-aware form renderer for Spawnflow — shadcn/ui styled, react-hook-form + zod under the hood.",
   "type": "module",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
     "zod": ">=3.23"
   },
   "dependencies": {
-    "@spawnflow-dx/core": "^0.2.1"
+    "@spawnflow-dx/core": "^0.2.2"
   },
   "scripts": {
     "registry:build": "shadcn build",

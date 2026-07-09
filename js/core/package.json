@@ -1,6 +1,6 @@
 {
   "name": "@spawnflow-dx/core",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Framework-agnostic core for Spawnflow schema contracts: contract types, eligibility evaluation, rule→Zod compilation, HTTP client. Zero rendering.",
   "type": "module",
   "main": "dist/index.js",

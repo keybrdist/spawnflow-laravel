@@ -1,4 +1,4 @@
-import type { OptionsPage, Schema, SpawnClient, SubmitResult } from './contract';
+import type { OptionsPage, Schema, SpawnClient, SubmitResult } from './contract.js';
 
 export interface HttpClientOptions {
   baseUrl?: string;
