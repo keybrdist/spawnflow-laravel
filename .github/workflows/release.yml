@@ -57,6 +57,13 @@ jobs:
           npm test
           npm run typecheck
 
+      # react-shadcn's build resolves @spawnflow-dx/core through the
+      # workspace symlink at js/core — its dist/ must exist even when
+      # core's publish step is skipped as already-published.
+      - name: Build core dist
+        working-directory: js/core
+        run: npm run build
+
       # Idempotent: a PHP-only tag must not fail because the JS version
       # already exists — skip instead.
       - name: Publish @spawnflow-dx/core
