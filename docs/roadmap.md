@@ -16,9 +16,10 @@ building until real demand pulls it.
 
 ## In flight
 
-- Public distribution: [Packagist](https://packagist.org/packages/spawnflow/spawnflow-laravel)
-  is live; npm publication of `@spawnflow-dx/core` / `@spawnflow-dx/react-shadcn`
-  is next (registry raw-URL installs already work).
+- Public distribution is live: [Packagist](https://packagist.org/packages/spawnflow/spawnflow-laravel),
+  npm ([`@spawnflow-dx/core`](https://www.npmjs.com/package/@spawnflow-dx/core),
+  [`@spawnflow-dx/react-shadcn`](https://www.npmjs.com/package/@spawnflow-dx/react-shadcn)),
+  and the shadcn registry item (raw-URL install).
 - Adoption & hardening toward 1.0: the API stabilizes against real external
   consumers before any semver lock. Breaking-change wishes are collected and
   shipped together in 1.0 — not piecemeal.
