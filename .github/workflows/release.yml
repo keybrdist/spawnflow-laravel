@@ -20,14 +20,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Node 24 bundles npm >= 11.5.1 (trusted publishing requirement).
+      # No registry-url: setup-node would write a placeholder-token .npmrc
+      # that shadows OIDC auth.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          registry-url: https://registry.npmjs.org
-
-      # Trusted publishing requires npm >= 11.5.1
-      - name: Update npm
-        run: npm install -g npm@latest
+          node-version: 24
 
       - name: Install workspace
         working-directory: js
