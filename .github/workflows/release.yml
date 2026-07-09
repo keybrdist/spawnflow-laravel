@@ -31,8 +31,15 @@ jobs:
       # publish rights on @spawnflow-dx), use it; otherwise rely on OIDC
       # trusted publishing.
       - name: Configure npm token fallback
-        if: ${{ secrets.NPM_TOKEN != '' }}
-        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "$NPM_TOKEN" ]; then
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            echo "token fallback configured"
+          else
+            echo "no NPM_TOKEN secret — relying on OIDC trusted publishing"
+          fi
 
       - name: Debug OIDC availability
         run: |
