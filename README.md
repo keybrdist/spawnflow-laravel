@@ -26,7 +26,7 @@ In conventional Laravel, adding a new API resource means creating a **controller
 | **Runtime fluent chain** | The entire request lifecycle is one method chain, not spread across files |
 | **Dynamic subject resolution** | Models resolve from a URL segment via a registry — no per-resource controllers |
 | **Inline authorization** | Ownership and field permissions live in the chain, not in separate policy files |
-| **Minimal file surface** | New resource = 1 config entry + 1 enum. No scaffold. |
+| **Minimal file surface** | New resource = one command (`spawnflow:resource --generate`), or 1 config entry + 1 enum by hand |
 | **Reads like a sentence** | `spawn → auth → resolve → ask → fields → validate → save → present` |
 
 ### Built for LLM-assisted codebases
@@ -341,6 +341,48 @@ Contexts keep referencing fields by name; the schema layer joins names to descri
 
 ---
 
+## Eligibility Rules
+
+Context enums answer **who** may touch a field in **what record state**. Eligibility rules answer the orthogonal question: *given the form's current values, is this field visible/enabled?* Rules are declared on descriptors, serialized into the contract, and evaluated identically in PHP and JS — never put role checks in rules.
+
+```php
+Field::string('company_name')
+    ->visibleWhen(['==' => [['var' => 'type'], 'business']]),
+
+Field::string('vat_number')
+    ->enabledWhen(['and' => [
+        ['==' => [['var' => 'type'], 'business']],
+        ['in' => [['var' => 'country'], ['DE', 'FR', 'NL']]],
+    ]]),
+
+Field::string('discount_code')->visibleWhen(...)->serverResolved(),  // verdict only, no client re-eval
+```
+
+- **Condition body is restricted JSON Logic** — fixed op allowlist (`==` strict, `!=`, `>`, `<`, `>=`, `<=`, `and`, `or`, `!`, `in`, `var`, `missing`). Unknown ops or missing vars fail **closed**. Conditions reference sibling field *values*, never other fields' eligibility — no cycles by construction.
+- **Server stays authoritative**: the resolved schema ships per-field verdicts; clients also get the rule and re-evaluate live as values change (hidden fields unmount, disabled fields reject input) without a round trip.
+- **Rules are never cosmetic**: `save()` discards rule-ineligible values (clear-on-ineligible); `validate()` skips their rules.
+- **Serialization guards**: referencing an undeclared field, or one a variant can't see, throws `InvalidEligibilityException` at declaration time — unless the field is `->serverResolved()`.
+- **Cross-runtime parity** is pinned by one conformance suite (`resources/conformance/eligibility-fixtures.json`), run by Pest and vitest against the same fixtures.
+
+### Groups
+
+Groups are first-class eligibility nodes — sections or wizard steps that accept the same rule envelope. A hidden group hides its members regardless of their own rules (AND-composition):
+
+```php
+class BillingFields extends FieldSet
+{
+    public static function groups(): array
+    {
+        return [
+            Group::make('company', ['company_name', 'vat_number'])
+                ->visibleWhen(['==' => [['var' => 'type'], 'business']]),
+        ];
+    }
+}
+```
+
+---
+
 ## Centralized Validation
 
 Rules live once — on the field descriptors, with per-context overrides — and every consumer enforces the same thing:
@@ -461,6 +503,28 @@ The generator and the live endpoint emit through one serializer — generated ar
 ## Relation Options
 
 Relation fields get a data source for free. When schema routes are enabled, `GET /spawnflow/options/{subject}/{field}?q=&page=` serves `{value, label}` pages from the related model's display column — ownership-scoped by default, `unscoped()` for shared lookups (countries, plans), `q` search for `searchable()` fields. Relation descriptors carry the `options_url` so renderers wire comboboxes automatically.
+
+---
+
+## Live Invalidation (SSE, opt-in)
+
+`GET /spawnflow/events` streams `change` signals whenever a subject is written through the Flow chain — **invalidation only, never state**. Clients refetch through the endpoints they already use, so a dropped stream degrades to non-live, never to wrong data.
+
+```php
+// config/spawnflow.php
+'events' => true,   // registered with the schema routes, same middleware
+```
+
+```ts
+import { subscribeToChanges } from '@spawnflow/core';
+
+const unsubscribe = subscribeToChanges(
+    ({ subject }) => refetch(subject),
+    { baseUrl: '/api', subjects: ['posts'] },
+);
+```
+
+`since[subject]=n` replays missed changes on reconnect. Each open stream holds a PHP worker — set `events_max_polls` to recycle idle streams (EventSource reconnects automatically).
 
 ---
 
@@ -649,6 +713,18 @@ return [
         // 'posts' => \App\Spawnflow\PostFields::class,
     ],
 
+    // #[SpawnSubject] attribute discovery — FieldSets under the discovery
+    // path self-register; config entries above override on conflict.
+    // Deploy-time: spawnflow:cache freezes the scan, spawnflow:clear unfreezes.
+    'discovery' => true,
+    'discovery_path' => null, // defaults to app_path('Spawnflow')
+
+    // SSE invalidation channel (GET /spawnflow/events) — opt-in.
+    'events' => false,
+    'events_poll_interval' => 2,   // seconds between version checks
+    'events_max_polls' => null,    // null = stream until client disconnects
+    'events_cache_store' => null,  // null = default cache store
+
     // Database column linking records to their owner.
     'ownership_column' => 'ownerId',
 
@@ -661,13 +737,22 @@ return [
     // Middleware applied to schema routes.
     'schema_middleware' => ['auth:api'],
 
-    // Frontend code generation settings (future).
+    // Frontend code generation settings (php artisan spawnflow:generate).
     'generator' => [
         'output_path'  => base_path('../frontend/src/generated'),
         'type_format'  => 'typescript',
         'validation'   => 'zod',
         'emit_client'  => true,
         'emit_unions'  => true,
+    ],
+
+    // MCP server — disabled by default; 'enabled' exposes stdio,
+    // 'web' additionally exposes streamable HTTP behind web_middleware.
+    'mcp' => [
+        'enabled' => false,
+        'web' => false,
+        'web_route' => '/mcp/spawnflow',
+        'web_middleware' => ['auth:api', 'throttle:60,1'],
     ],
 ];
 ```
@@ -679,12 +764,13 @@ return [
 Run the package tests:
 
 ```bash
-cd packages/spawnflow
 composer install
 vendor/bin/pest
 ```
 
-The test suite uses Orchestra Testbench with an in-memory SQLite database. All fixtures are self-contained — no application models required.
+The test suite uses Orchestra Testbench with an in-memory SQLite database. All fixtures are self-contained — no application models required. DB-introspection tests (`--group=mysql-introspection`) run against a real MySQL service in CI and skip locally without one.
+
+JS side (`js/`): `npm test` runs the eligibility conformance suite (vitest) against the same `resources/conformance/eligibility-fixtures.json` the Pest suite uses, plus typecheck and demo build.
 
 ---
 

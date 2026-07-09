@@ -10,6 +10,8 @@ Key facts for code generation:
 - Groups (`FieldSet::groups()`, `Group::make('billing', [...])->visibleWhen(...)`) are rule-bearing sections; hidden group hides members (AND composition).
 - The schema contract (docs/schema-contract.md) is the single source of truth: `GET /spawnflow/schema/{subject}/{id?}` serves it; `php artisan spawnflow:generate` emits TypeScript types + Zod schemas from the same serializer — no drift possible.
 - Write path enforces everything: variant-ineligible and rule-ineligible fields are discarded on save, never trusted from the client.
+- Livewire renderer: `<livewire:spawnflow-form subject="posts" :record-id="$id" />` — ONE generic schema-interpreting component, auto-registered when Livewire is installed; eligibility re-evaluates server-side per update; saves flow through the same Flow chain as HTTP.
+- SSE invalidation (opt-in, `spawnflow.events`): `GET /spawnflow/events` streams `change` signals on Flow writes — signals only, clients refetch via existing endpoints; `subscribeToChanges()` in @spawnflow/core.
 
 ## MCP
 
