@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1] - 2026-07-09
 
+### Fixed
+- `stubs/` no longer export-ignored — dist installs (Packagist/VCS zip) were missing the scaffolding stubs, breaking `spawnflow:resource` and `make:spawnflow-context` with a file_get_contents error (surfaced rehearsing the quickstart on a fresh app)
+
 ### Added
 - Laravel 13 support (`illuminate/*` `^13.0`, PHP ≥ 8.3 on 13) — full suite green on 13.19; CI matrix extended with PHP 8.3/8.4 × Laravel 13 + testbench 11. Fresh `laravel new` apps (13.x) can now install the package.
 
