@@ -61,6 +61,8 @@ php artisan vendor:publish --tag=spawnflow-config
 
 ### The 3-command path
 
+![The 3-command path: composer require → spawnflow:install → spawnflow:resource Post --generate](demo/3-command-path.gif)
+
 From an existing table to a registered, permission-aware resource:
 
 ```bash
@@ -771,6 +773,13 @@ vendor/bin/pest
 The test suite uses Orchestra Testbench with an in-memory SQLite database. All fixtures are self-contained — no application models required. DB-introspection tests (`--group=mysql-introspection`) run against a real MySQL service in CI and skip locally without one.
 
 JS side (`js/`): `npm test` runs the eligibility conformance suite (vitest) against the same `resources/conformance/eligibility-fixtures.json` the Pest suite uses, plus typecheck and demo build.
+
+---
+
+## Roadmap
+
+See [docs/roadmap.md](docs/roadmap.md) — shipped, in flight, and what stays
+demand-gated (with the exact triggers that unpark each item).
 
 ---
 

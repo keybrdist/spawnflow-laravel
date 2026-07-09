@@ -23,6 +23,7 @@ Key facts for code generation:
 - [Schema contract](docs/schema-contract.md): the wire format — descriptors, structured rules, eligibility envelopes, resolved verdicts, groups
 - [MCP server](docs/mcp.md): tools, transports, security model
 - [CHANGELOG](CHANGELOG.md): feature history
+- [Roadmap](docs/roadmap.md): shipped / in-flight / demand-gated items with explicit triggers
 
 ## Frontend
 
