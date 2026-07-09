@@ -27,6 +27,12 @@ jobs:
         with:
           node-version: 24
 
+      - name: Debug OIDC availability
+        run: |
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL present: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
+          echo "npm $(npm --version) / node $(node --version)"
+          npm config get registry
+
       - name: Install workspace
         working-directory: js
         run: npm install
