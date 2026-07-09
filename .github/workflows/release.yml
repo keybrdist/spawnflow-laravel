@@ -52,7 +52,7 @@ jobs:
           if npm view "@spawnflow-dx/core@${VERSION}" version >/dev/null 2>&1; then
             echo "core@${VERSION} already published — skipping"
           else
-            npm publish --access public
+            npm publish --access public --loglevel http
           fi
 
       - name: Publish @spawnflow-dx/react-shadcn
