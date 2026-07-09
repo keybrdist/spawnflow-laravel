@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-09
+
+### Added
+- Laravel 13 support (`illuminate/*` `^13.0`, PHP ≥ 8.3 on 13) — full suite green on 13.19; CI matrix extended with PHP 8.3/8.4 × Laravel 13 + testbench 11. Fresh `laravel new` apps (13.x) can now install the package.
+
 ## [0.2.0] - 2026-07-09
 
 The Living Contract release: the schema contract becomes complete (types +
@@ -98,6 +103,7 @@ renderers for React and Livewire, agent access over MCP, and opt-in liveness.
 - 29 Pest tests covering all chain methods
 - Support for Laravel 11 and 12, PHP 8.2+
 
-[Unreleased]: https://github.com/keybrdist/spawnflow-laravel/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/keybrdist/spawnflow-laravel/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/keybrdist/spawnflow-laravel/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/keybrdist/spawnflow-laravel/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/keybrdist/spawnflow-laravel/releases/tag/v0.1.0
