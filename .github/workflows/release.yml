@@ -1,0 +1,61 @@
+name: Release
+
+# npm publish via OIDC trusted publishing — no tokens, provenance for free.
+# One-time setup per package on npmjs.com (Settings → Trusted Publisher):
+#   repository: keybrdist/spawnflow-laravel, workflow: release.yml
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  npm:
+    runs-on: ubuntu-latest
+    name: Publish @spawnflow-dx packages
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      # Trusted publishing requires npm >= 11.5.1
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - name: Install workspace
+        working-directory: js
+        run: npm install
+
+      - name: Test + typecheck
+        working-directory: js
+        run: |
+          npm test
+          npm run typecheck
+
+      # Idempotent: a PHP-only tag must not fail because the JS version
+      # already exists — skip instead.
+      - name: Publish @spawnflow-dx/core
+        working-directory: js/core
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@spawnflow-dx/core@${VERSION}" version >/dev/null 2>&1; then
+            echo "core@${VERSION} already published — skipping"
+          else
+            npm publish --access public
+          fi
+
+      - name: Publish @spawnflow-dx/react-shadcn
+        working-directory: js/react-shadcn
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@spawnflow-dx/react-shadcn@${VERSION}" version >/dev/null 2>&1; then
+            echo "react-shadcn@${VERSION} already published — skipping"
+          else
+            npm publish --access public
+          fi
