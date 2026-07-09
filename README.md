@@ -518,7 +518,7 @@ Relation fields get a data source for free. When schema routes are enabled, `GET
 ```
 
 ```ts
-import { subscribeToChanges } from '@spawnflow/core';
+import { subscribeToChanges } from '@spawnflow-dx/core';
 
 const unsubscribe = subscribeToChanges(
     ({ subject }) => refetch(subject),
@@ -555,7 +555,7 @@ registered automatically when Livewire is installed.
 The renderer is also distributed as a shadcn registry item, so the
 presentational source lands in **your** repo — restyle it, rewrite it,
 let your LLM edit it. The contract, evaluator, and client stay versioned
-in `@spawnflow/core`:
+in `@spawnflow-dx/core`:
 
 ```bash
 npx shadcn add https://raw.githubusercontent.com/keybrdist/spawnflow-laravel/main/js/react-shadcn/public/r/spawn-form.json
@@ -568,10 +568,10 @@ distribution fits: dependency (npm) or owned code (registry).
 
 ## React Renderer (`js/react-shadcn`)
 
-`@spawnflow/react-shadcn` renders complete forms from the schema contract — shadcn-styled widgets, react-hook-form + Zod under the hood:
+`@spawnflow-dx/react-shadcn` renders complete forms from the schema contract — shadcn-styled widgets, react-hook-form + Zod under the hood:
 
 ```tsx
-import { SpawnForm, createHttpClient } from '@spawnflow/react-shadcn';
+import { SpawnForm, createHttpClient } from '@spawnflow-dx/react-shadcn';
 
 const client = createHttpClient({ baseUrl: '/api', headers: () => ({ Authorization: `Bearer ${token}` }) });
 

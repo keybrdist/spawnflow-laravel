@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- npm scope is `@spawnflow-dx` (`@spawnflow-dx/core`, `@spawnflow-dx/react-shadcn`) — the bare `spawnflow` npm name (and thus the `@spawnflow` org) is held by an unrelated CLI tool. Workspace, registry item, and docs renamed; JS packages version 0.2.1 to match the PHP release. Both now ship compiled `dist/` (tsc, declarations) instead of raw TS entries.
+
 ## [0.2.1] - 2026-07-09
 
 ### Fixed

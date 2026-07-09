@@ -1,4 +1,4 @@
-import { SpawnForm } from '@spawnflow/react-shadcn';
+import { SpawnForm } from '@spawnflow-dx/react-shadcn';
 import React, { useMemo, useState } from 'react';
 import { createMockClient, personas, records, type Persona } from './mockApi';
 

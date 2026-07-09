@@ -6,7 +6,7 @@ import type {
   SpawnClient,
   StructuredRule,
   SubmitResult,
-} from '@spawnflow/react-shadcn';
+} from '@spawnflow-dx/react-shadcn';
 
 /**
  * In-memory SpawnClient serving contract-v1 schemas — what a real Laravel

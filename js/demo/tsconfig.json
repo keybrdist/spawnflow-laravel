@@ -15,10 +15,10 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@spawnflow/react-shadcn": [
+      "@spawnflow-dx/react-shadcn": [
         "../react-shadcn/src/index.ts"
       ],
-      "@spawnflow/core": [
+      "@spawnflow-dx/core": [
         "../core/src/index.ts"
       ]
     }

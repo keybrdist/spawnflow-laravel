@@ -172,7 +172,7 @@ Declared in the FieldSet: `->visibleWhen($condition)`, `->hiddenWhen()`,
 
 Conditions are a fixed-allowlist subset of JSON Logic, evaluated
 identically by `Spawnflow\Eligibility\Condition` (PHP) and
-`@spawnflow/core` (JS); the shared behavior is pinned by
+`@spawnflow-dx/core` (JS); the shared behavior is pinned by
 `resources/conformance/eligibility-fixtures.json`, which both test suites
 run.
 
@@ -415,7 +415,7 @@ data: {"subject":"posts","version":4}
 - `since[{subject}]={version}` replays changes missed while
   disconnected.
 - Client helper: `subscribeToChanges(onChange, { baseUrl, subjects })`
-  in `@spawnflow/core` (EventSource, auto-reconnect, returns
+  in `@spawnflow-dx/core` (EventSource, auto-reconnect, returns
   unsubscribe).
 - Each open stream holds a PHP worker (SSE-on-FPM economics): size
   worker pools accordingly or set `events_max_polls` to recycle idle

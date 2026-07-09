@@ -7,9 +7,9 @@
       "name": "spawn-form",
       "type": "registry:component",
       "title": "SpawnForm",
-      "description": "Schema-driven, permission-aware form for Spawnflow backends: widgets from field descriptors, Zod validation from structured rules, live eligibility (show/hide/enable/disable) from the contract's rule envelopes, groups as sections. You own this source — edit freely; the contract and evaluator stay in @spawnflow/core.",
+      "description": "Schema-driven, permission-aware form for Spawnflow backends: widgets from field descriptors, Zod validation from structured rules, live eligibility (show/hide/enable/disable) from the contract's rule envelopes, groups as sections. You own this source — edit freely; the contract and evaluator stay in @spawnflow-dx/core.",
       "dependencies": [
-        "@spawnflow/core",
+        "@spawnflow-dx/core",
         "react-hook-form",
         "@hookform/resolvers",
         "zod"

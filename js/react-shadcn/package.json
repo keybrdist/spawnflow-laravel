@@ -1,10 +1,10 @@
 {
-  "name": "@spawnflow/react-shadcn",
-  "version": "0.1.0",
-  "description": "Schema-driven, context-aware form renderer for Spawnflow \u2014 shadcn/ui styled, react-hook-form + zod under the hood.",
+  "name": "@spawnflow-dx/react-shadcn",
+  "version": "0.2.1",
+  "description": "Schema-driven, context-aware form renderer for Spawnflow — shadcn/ui styled, react-hook-form + zod under the hood.",
   "type": "module",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "license": "MIT",
   "peerDependencies": {
     "react": ">=18",
@@ -14,12 +14,32 @@
     "zod": ">=3.23"
   },
   "dependencies": {
-    "@spawnflow/core": "*"
+    "@spawnflow-dx/core": "^0.2.1"
   },
   "scripts": {
-    "registry:build": "shadcn build"
+    "registry:build": "shadcn build",
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build"
   },
   "devDependencies": {
-    "shadcn": "^3.0.0"
-  }
+    "shadcn": "^3.0.0",
+    "typescript": "^5.6.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "registry.json"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keybrdist/spawnflow-laravel.git",
+    "directory": "js/react-shadcn"
+  },
+  "homepage": "https://github.com/keybrdist/spawnflow-laravel"
 }

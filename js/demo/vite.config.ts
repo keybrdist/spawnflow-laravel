@@ -7,8 +7,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
-      '@spawnflow/react-shadcn': path.resolve(__dirname, '../react-shadcn/src/index.ts'),
-      '@spawnflow/core': path.resolve(__dirname, '../core/src/index.ts'),
+      '@spawnflow-dx/react-shadcn': path.resolve(__dirname, '../react-shadcn/src/index.ts'),
+      '@spawnflow-dx/core': path.resolve(__dirname, '../core/src/index.ts'),
     },
   },
 });

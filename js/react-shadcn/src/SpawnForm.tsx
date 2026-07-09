@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import type { FormField, GroupDescriptor, Schema, SpawnClient, SubmitResult, Verdict } from '@spawnflow/core';
-import { compileForm, fieldVerdicts, normalize } from '@spawnflow/core';
+import type { FormField, GroupDescriptor, Schema, SpawnClient, SubmitResult, Verdict } from '@spawnflow-dx/core';
+import { compileForm, fieldVerdicts, normalize } from '@spawnflow-dx/core';
 import { defaultWidgets, type WidgetComponent } from './widgets';
 
 export interface SpawnFormProps {
