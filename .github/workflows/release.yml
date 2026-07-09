@@ -27,6 +27,13 @@ jobs:
         with:
           node-version: 24
 
+      # Fallback auth: if an NPM_TOKEN repo secret exists (granular token,
+      # publish rights on @spawnflow-dx), use it; otherwise rely on OIDC
+      # trusted publishing.
+      - name: Configure npm token fallback
+        if: ${{ secrets.NPM_TOKEN != '' }}
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> ~/.npmrc
+
       - name: Debug OIDC availability
         run: |
           echo "ACTIONS_ID_TOKEN_REQUEST_URL present: ${ACTIONS_ID_TOKEN_REQUEST_URL:+yes}"
@@ -52,7 +59,7 @@ jobs:
           if npm view "@spawnflow-dx/core@${VERSION}" version >/dev/null 2>&1; then
             echo "core@${VERSION} already published — skipping"
           else
-            npm publish --access public --loglevel http
+            npm publish --access public
           fi
 
       - name: Publish @spawnflow-dx/react-shadcn
